@@ -1,0 +1,53 @@
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Providers } from "@/components/providers";
+import { BottomNav } from "@/components/ui/BottomNav";
+import { Header } from "@/components/ui/Header";
+import { ToastProvider } from "@/components/ToastProvider";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+export const metadata: Metadata = {
+  title: "Armina - The Future of Arisan",
+  description: "Platform arisan on-chain terdesentralisasi untuk komunitas Indonesia",
+  keywords: ["arisan", "blockchain", "defi", "indonesia", "base", "miniapp"],
+  authors: [{ name: "Armina Team" }],
+  icons: {
+    icon: "/favicon.ico",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#1e2a4a",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="id" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased bg-[#1e2a4a]`}>
+        <Providers>
+          <ToastProvider />
+          <div className="min-h-screen">
+            <Header />
+            <main className="max-w-lg mx-auto pb-20">{children}</main>
+            <BottomNav />
+          </div>
+        </Providers>
+      </body>
+    </html>
+  );
+}
