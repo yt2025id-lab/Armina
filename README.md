@@ -1,18 +1,30 @@
-# 🌟 Armina - DeFi Arisan Platform
+# 📱 Armina - Arisan Mini App
 
-> **Platform arisan on-chain terdesentralisasi untuk komunitas Indonesia**
+> **Mini App DeFi Arisan on-chain untuk komunitas Indonesia**
+> Progressive Web App | Mobile-First | Base Sepolia
 > Built for Base Indonesia Hackathon 2026
 
 [![Base Sepolia](https://img.shields.io/badge/Network-Base%20Sepolia-blue)](https://sepolia.basescan.org)
+[![Mini App](https://img.shields.io/badge/Type-Mini%20App-green)](https://developer.worldcoin.org/mini-apps)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org)
-[![Hardhat](https://img.shields.io/badge/Hardhat-2.19-yellow)](https://hardhat.org)
+[![PWA](https://img.shields.io/badge/PWA-Ready-purple)](https://web.dev/progressive-web-apps/)
 
 ---
 
-## 📖 Deskripsi Project
+## 📖 Apa itu Armina?
 
-**Armina** adalah platform arisan digital yang sepenuhnya on-chain, dirancang khusus untuk komunitas Indonesia. Platform ini menggabungkan tradisi arisan dengan teknologi blockchain untuk memberikan transparansi, keamanan, dan auto-generating yield.
+**Armina** adalah **Mini App** arisan digital yang sepenuhnya on-chain - dirancang mobile-first untuk kemudahan akses komunitas Indonesia. Sebagai Progressive Web App (PWA), Armina bisa diakses langsung dari browser tanpa perlu install, sambil tetap memberikan pengalaman seperti native app.
+
+### 📱 Kenapa Mini App?
+
+- **No Installation** - Langsung pakai dari browser, tidak perlu download
+- **Mobile-First** - Dioptimalkan untuk smartphone
+- **Fast & Lightweight** - Loading cepat, hemat data
+- **Cross-Platform** - Works on iOS, Android, Desktop
+- **Push Notifications** - Reminder payment & winner announcement (coming soon)
+- **Offline-Ready** - Bisa baca data pool meski offline
+
+Platform ini menggabungkan tradisi arisan Indonesia dengan teknologi blockchain modern untuk memberikan transparansi, keamanan, dan auto-generating yield.
 
 ### 🎯 Masalah yang Dipecahkan
 
@@ -56,24 +68,30 @@
 - 100% random, fair, dan verifiable on-chain
 - Tidak bisa dimanipulasi oleh siapapun
 
-### 5. **Progressive Web App**
-- Responsive design, works on mobile & desktop
-- Toast notifications untuk feedback real-time
-- Loading skeletons untuk UX yang smooth
-- IDRX balance indicator di header
+### 5. **Mini App Experience**
+- **Mobile-First Design** - Optimized untuk layar smartphone
+- **Responsive Layout** - Seamless di semua device
+- **Toast Notifications** - Real-time feedback untuk setiap action
+- **Loading Skeletons** - Smooth UX saat fetch data
+- **IDRX Balance Indicator** - Always visible di header
+- **Bottom Navigation** - Easy thumb-reach untuk mobile
+- **PWA-Ready** - Install to home screen (Add to Home Screen)
+- **Fast Loading** - Optimized bundle size & lazy loading
 
 ---
 
 ## 🛠 Tech Stack
 
-### Frontend
-- **Next.js 15** - React framework dengan App Router
+### Mini App Frontend
+- **Next.js 15** - React framework dengan App Router & RSC
 - **TypeScript** - Type-safe development
-- **TailwindCSS** - Styling & responsive design
+- **TailwindCSS** - Mobile-first responsive design
+- **PWA (Progressive Web App)** - Installable, offline-ready
 - **Wagmi v2** - React hooks for Ethereum
 - **Viem** - TypeScript interface for Ethereum
-- **Privy** - Embedded wallet & authentication
+- **Privy** - Embedded wallet & email authentication
 - **react-hot-toast** - Toast notifications
+- **Responsive Design** - Mobile-first, thumb-friendly UI
 
 ### Smart Contracts
 - **Solidity 0.8.20** - Smart contract language

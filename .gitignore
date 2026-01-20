@@ -39,6 +39,12 @@ contracts/cache/
 contracts/out/
 contracts/broadcast/
 
+# Hardhat
+artifacts/
+cache/
+typechain-types/
+deployments/
+
 # IDE
 .idea/
 .vscode/
