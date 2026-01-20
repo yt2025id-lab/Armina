@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 
@@ -26,12 +26,17 @@ const MOCK_POOL = {
   ],
 };
 
-export default function PoolDetailsPage({ params }: { params: { id: string } }) {
+export default function PoolDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
   const router = useRouter();
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
   const [isJoining, setIsJoining] = useState(false);
 
-  const pool = MOCK_POOL; // In real app: fetch from contract using params.id
+  const pool = MOCK_POOL; // In real app: fetch from contract using id
 
   const formatIDRX = (amount: number) => {
     return new Intl.NumberFormat("id-ID").format(Math.round(amount / 100));

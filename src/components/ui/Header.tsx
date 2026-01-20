@@ -1,17 +1,21 @@
 "use client";
 
-import { usePrivy } from "@privy-io/react-auth";
-import { useAccount } from "wagmi";
+import { useAccount, useDisconnect } from "wagmi";
 import { formatUnits } from "viem";
 import { formatAddress } from "@/lib/constants";
 import { useIDRXBalance } from "@/hooks/useIDRX";
+import {
+  ConnectWallet,
+  Wallet,
+  WalletDropdown,
+  WalletDropdownDisconnect,
+} from "@coinbase/onchainkit/wallet";
+import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity";
 
 export function Header() {
-  const { ready, authenticated, logout, user } = usePrivy();
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
   const { data: balance, isLoading } = useIDRXBalance(address);
-
-  const displayAddress = address || user?.wallet?.address;
 
   const formatBalance = (bal: bigint | undefined) => {
     if (!bal) return "0";
@@ -30,7 +34,7 @@ export function Header() {
       <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {/* IDRX Balance */}
-          {ready && authenticated && displayAddress && (
+          {isConnected && address && (
             <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg">
               <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
@@ -45,22 +49,24 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-3">
-          {ready && authenticated && displayAddress ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-sm text-white/70 font-mono">
-                  {formatAddress(displayAddress)}
-                </span>
-              </div>
-              <button
-                onClick={logout}
-                className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors"
-              >
-                Logout
+          {isConnected && address ? (
+            <Wallet>
+              <WalletDropdown>
+                <Identity address={address} schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9">
+                  <Avatar className="w-6 h-6" />
+                  <Name className="text-sm text-white" />
+                  <Address className="text-xs text-white/70 font-mono" />
+                </Identity>
+                <WalletDropdownDisconnect className="text-xs" />
+              </WalletDropdown>
+            </Wallet>
+          ) : (
+            <ConnectWallet>
+              <button className="text-xs bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
+                Connect Wallet
               </button>
-            </div>
-          ) : null}
+            </ConnectWallet>
+          )}
         </div>
       </div>
     </header>

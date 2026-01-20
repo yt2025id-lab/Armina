@@ -87,9 +87,11 @@ Platform ini menggabungkan tradisi arisan Indonesia dengan teknologi blockchain 
 - **TypeScript** - Type-safe development
 - **TailwindCSS** - Mobile-first responsive design
 - **PWA (Progressive Web App)** - Installable, offline-ready
+- **Farcaster Frame SDK** - Mini App framework untuk Base App
+- **OnchainKit** - Coinbase wallet components & hooks
 - **Wagmi v2** - React hooks for Ethereum
 - **Viem** - TypeScript interface for Ethereum
-- **Privy** - Embedded wallet & email authentication
+- **Coinbase Smart Wallet** - Embedded wallet with gasless transactions
 - **react-hot-toast** - Toast notifications
 - **Responsive Design** - Mobile-first, thumb-friendly UI
 
@@ -129,27 +131,77 @@ npm install
 
 ### 3. Setup Environment Variables
 
-Create `.env.local` in root directory:
+Copy `.env.example` to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
 
 ```env
-# Privy Configuration
-NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id
+# Coinbase Developer Platform
+NEXT_PUBLIC_CDP_PROJECT_ID=your_cdp_project_id_here
+
+# OnchainKit API Key (optional, for enhanced features)
+NEXT_PUBLIC_ONCHAINKIT_API_KEY=your_api_key_here
+
+# Base App / Farcaster Frame Configuration
+NEXT_PUBLIC_URL=http://localhost:3000
 
 # Contract Addresses (Base Sepolia)
-NEXT_PUBLIC_IDRX_ADDRESS=0x7F197979D4046b2264De80D11359B6Cb5d1a8611
+NEXT_PUBLIC_ARMINA_POOL_ADDRESS=0x...
+NEXT_PUBLIC_IDRX_TOKEN_ADDRESS=0x7F197979D4046b2264De80D11359B6Cb5d1a8611
 NEXT_PUBLIC_ARMINA_POOL_ADDRESS=0xDdBFEBA307151a1991b68D31D9e6041852302fB7
 
 # Network
 NEXT_PUBLIC_BASE_SEPOLIA_RPC=https://sepolia.base.org
 ```
 
-### 4. Run Development Server
+### 4. Get CDP Project ID (Required for Base App)
+
+1. Visit [Coinbase Developer Platform](https://portal.cdp.coinbase.com)
+2. Create a new project
+3. Copy your Project ID
+4. Paste it in `.env` as `NEXT_PUBLIC_CDP_PROJECT_ID`
+
+### 5. Run Development Server
 
 ```bash
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 🌐 Base App Integration
+
+Armina adalah **true Base App Mini App** yang terintegrasi dengan ekosistem Coinbase:
+
+### 📱 Farcaster Frame Manifest
+
+Armina menyediakan Farcaster Frame manifest untuk discoverability di Base App:
+
+- **Endpoint**: `/.well-known/farcaster.json`
+- **API Route**: `/api/farcaster`
+
+Manifest ini memungkinkan Armina muncul di Base App directory dan dapat diakses sebagai Mini App.
+
+### 🔗 Coinbase Smart Wallet
+
+Armina menggunakan **Coinbase Smart Wallet** (Base Accounts) untuk:
+
+- **Gasless Transactions** - User tidak perlu hold ETH untuk gas
+- **Email Login** - Bisa login dengan email saja, tidak perlu MetaMask
+- **Cross-Device** - Wallet sync across devices
+- **Embedded Wallet** - Wallet terintegrasi dalam app, UX seamless
+
+### 📲 Cara Akses di Base App
+
+1. Buka **Coinbase Wallet** atau **Base App**
+2. Cari "Armina" di Mini Apps directory
+3. Atau akses langsung via URL: `https://armina.app`
+4. Connect dengan Coinbase Smart Wallet
+5. Mulai bergabung atau membuat pool arisan!
 
 ---
 

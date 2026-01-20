@@ -1,20 +1,18 @@
 "use client";
 
-import { usePrivy } from "@privy-io/react-auth";
 import { useAccount, useReadContract } from "wagmi";
 import Link from "next/link";
 import { formatAddress } from "@/lib/constants";
 import Image from "next/image";
 import { useOnboarding } from "@/components/providers";
 import { IDRX_ABI, CONTRACTS } from "@/contracts/abis";
+import { ConnectWallet } from "@coinbase/onchainkit/wallet";
 
 export default function HomePage() {
-  const { ready, authenticated, login, user } = usePrivy();
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
   const { showOnboarding } = useOnboarding();
 
-  const displayAddress = address || user?.wallet?.address;
-  const userEmail = user?.email?.address;
+  const displayAddress = address;
 
   // Fetch IDRX balance
   const { data: idrxBalance } = useReadContract({
@@ -49,13 +47,11 @@ export default function HomePage() {
         </div>
 
         {/* Auth Section */}
-        {ready && authenticated && displayAddress ? (
+        {isConnected && displayAddress ? (
           <div className="space-y-3">
             {/* User Info */}
             <div className="p-4 bg-white/10 backdrop-blur rounded-2xl text-center">
-              <p className="text-white/60 text-sm mb-1">
-                {userEmail || "Wallet Connected"}
-              </p>
+              <p className="text-white/60 text-sm mb-1">Wallet Connected</p>
               <p className="font-mono text-sm">{formatAddress(displayAddress)}</p>
             </div>
 
@@ -70,21 +66,16 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-        ) : ready ? (
-          <div className="space-y-4 flex flex-col items-center">
-            <button
-              onClick={login}
-              className="max-w-xs w-full py-3.5 px-6 bg-white text-[#1e2a4a] rounded-xl text-center font-semibold hover:bg-white/90 transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
-            >
-              Sign in with Email or Wallet
-            </button>
-            <p className="text-white/70 text-sm text-center leading-relaxed px-2 max-w-xs">
-              No crypto wallet needed, just use your email to start
-            </p>
-          </div>
         ) : (
-          <div className="p-4 bg-white/10 backdrop-blur rounded-2xl text-center">
-            <p className="text-white/70 text-sm">Loading...</p>
+          <div className="space-y-4 flex flex-col items-center">
+            <ConnectWallet className="max-w-xs w-full">
+              <button className="w-full py-3.5 px-6 bg-white text-[#1e2a4a] rounded-xl text-center font-semibold hover:bg-white/90 transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]">
+                Connect Coinbase Wallet
+              </button>
+            </ConnectWallet>
+            <p className="text-white/70 text-sm text-center leading-relaxed px-2 max-w-xs">
+              Use Coinbase Smart Wallet to get started
+            </p>
           </div>
         )}
       </div>
@@ -178,7 +169,7 @@ export default function HomePage() {
         </Link>
 
         {/* Active Pool Preview */}
-        {authenticated && (
+        {isConnected && (
           <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
             <div className="flex items-center justify-between mb-4">
               <p className="font-semibold text-[#1e2a4a] text-lg">Your Active Pools</p>

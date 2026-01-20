@@ -1,25 +1,41 @@
 "use client";
 
-import { type ReactNode, useEffect } from "react";
-
-// MiniKit types
-declare global {
-  interface Window {
-    MiniKit?: {
-      install: () => void;
-      isInstalled: () => boolean;
-    };
-  }
-}
+import { type ReactNode, useEffect, useState } from "react";
+import sdk from "@farcaster/frame-sdk";
 
 export function MiniKitProvider({ children }: { children: ReactNode }) {
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+
   useEffect(() => {
-    // MiniKit auto-installs when running inside Coinbase Wallet
-    // This is a fallback for development/testing
-    if (typeof window !== "undefined" && window.MiniKit) {
-      window.MiniKit.install();
-    }
+    const load = async () => {
+      // Initialize Farcaster Frame SDK context
+      const context = await sdk.context;
+
+      // Set safe area insets for proper mobile rendering
+      sdk.actions.ready({});
+
+      setIsSDKLoaded(true);
+
+      // Log context for debugging (remove in production)
+      if (process.env.NODE_ENV === "development") {
+        console.log("Farcaster Frame SDK loaded:", context);
+      }
+    };
+
+    load();
   }, []);
+
+  // Show loading state while SDK initializes
+  if (!isSDKLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#1e2a4a]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-sm">Loading Armina Mini App...</p>
+        </div>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }

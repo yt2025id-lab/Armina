@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjEsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0",
+    "payload": "eyJkb21haW4iOiJhcm1pbmEuYXBwIn0",
+    "signature": "MHg..."
+  },
+  "frame": {
+    "version": "next",
+    "name": "Armina - Arisan Mini App",
+    "iconUrl": "https://armina.app/logo.png",
+    "homeUrl": "https://armina.app",
+    "imageUrl": "https://armina.app/og-image.png",
+    "buttonTitle": "Open Armina",
+    "splashImageUrl": "https://armina.app/logo.png",
+    "splashBackgroundColor": "#1e2a4a",
+    "webhookUrl": "https://armina.app/api/webhook"
+  }
+}

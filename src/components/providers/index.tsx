@@ -1,20 +1,20 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { PrivyProvider } from "./PrivyProvider";
+import { OnchainKitProvider } from "./OnchainKitProvider";
 import { MiniKitProvider } from "./MiniKitProvider";
 import { ThemeProvider } from "./ThemeProvider";
 import { OnboardingProvider } from "./OnboardingProvider";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <PrivyProvider>
-      <MiniKitProvider>
+    <MiniKitProvider>
+      <OnchainKitProvider>
         <ThemeProvider>
           <OnboardingProvider>{children}</OnboardingProvider>
         </ThemeProvider>
-      </MiniKitProvider>
-    </PrivyProvider>
+      </OnchainKitProvider>
+    </MiniKitProvider>
   );
 }
 

@@ -131,7 +131,7 @@ export default function FaucetPage() {
             </h4>
             <p className="text-xs text-blue-800">
               IDRX is a mock ERC20 token representing Indonesian Rupiah on the
-              blockchain. It's used for testing the Armina DeFi platform on Base
+              blockchain. It&apos;s used for testing the Armina DeFi platform on Base
               Sepolia testnet. These tokens have no real value.
             </p>
           </div>
@@ -157,7 +157,7 @@ export default function FaucetPage() {
               No rate limits on testnet!
             </p>
             <p className="text-xs text-slate-600">
-              For creating pools, you'll need:
+              For creating pools, you&apos;ll need:
             </p>
             <ul className="text-xs text-slate-600 mt-1 space-y-1">
               <li>• 5-member pool: ~3,000K IDRX</li>
