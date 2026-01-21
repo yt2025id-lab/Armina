@@ -6,7 +6,7 @@ import { formatAddress } from "@/lib/constants";
 import Image from "next/image";
 import { useOnboarding, useLanguage } from "@/components/providers";
 import { IDRX_ABI, CONTRACTS } from "@/contracts/abis";
-import { ConnectWallet, Wallet } from "@coinbase/onchainkit/wallet";
+import { ConnectButton } from "@/components/ui/ConnectButton";
 
 export default function HomePage() {
   const { address, isConnected } = useAccount();
@@ -81,13 +81,9 @@ export default function HomePage() {
         <div className="flex flex-col items-center space-y-4">
           {!isConnected ? (
             <>
-              <Wallet>
-                <ConnectWallet className="w-full max-w-xs">
-                  <div className="w-full py-4 px-8 bg-white text-[#1d2856] rounded-2xl text-center font-bold text-lg hover:bg-slate-50 transition-all shadow-xl cursor-pointer border-4 border-[#1d2856]/20">
-                    {t.connectWallet}
-                  </div>
-                </ConnectWallet>
-              </Wallet>
+              <ConnectButton>
+                {t.connectWallet}
+              </ConnectButton>
               <p className="text-white/70 text-sm text-center leading-relaxed px-2 max-w-xs">
                 {t.connectWalletDesc}
               </p>

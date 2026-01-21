@@ -1,23 +1,21 @@
 "use client";
 
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount } from "wagmi";
 import { formatUnits } from "viem";
-import { formatAddress } from "@/lib/constants";
 import { useIDRXBalance } from "@/hooks/useIDRX";
 import { usePathname } from "next/navigation";
 import {
-  ConnectWallet,
   Wallet,
   WalletDropdown,
   WalletDropdownDisconnect,
 } from "@coinbase/onchainkit/wallet";
 import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity";
+import { ConnectButton } from "./ConnectButton";
 
 export function Header() {
   const pathname = usePathname();
   const isHomePage = pathname === "/";
   const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
   const { data: balance, isLoading } = useIDRXBalance(address);
 
   const formatBalance = (bal: bigint | undefined) => {
@@ -66,11 +64,9 @@ export function Header() {
                 </WalletDropdown>
               </Wallet>
             ) : (
-              <ConnectWallet>
-                <button className="text-xs bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
-                  Connect Wallet
-                </button>
-              </ConnectWallet>
+              <ConnectButton variant="header">
+                Connect
+              </ConnectButton>
             )}
           </div>
         )}
