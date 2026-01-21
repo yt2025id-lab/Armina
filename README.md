@@ -35,7 +35,7 @@ Platform ini menggabungkan tradisi arisan Indonesia dengan teknologi blockchain 
 
 ### ✨ Solusi Armina
 
-1. **Collateral 1000%** - Jaminan 10x lipat dari total pot untuk proteksi maksimal
+1. **Collateral 125%** - Keamanan + komitmen + modal yield farming
 2. **Smart Contract** - Semua transaksi tercatat on-chain, fully transparent
 3. **AI Yield Optimizer** - Auto-deploy collateral ke protokol lending dengan APY tertinggi
 4. **Chainlink VRF** - Pemilihan pemenang 100% fair & verifiable
@@ -48,14 +48,20 @@ Platform ini menggabungkan tradisi arisan Indonesia dengan teknologi blockchain 
 ### 1. **Pool Arisan Terdesentralisasi**
 - 3 tier pool: Small (5 orang), Medium (10 orang), Large (20 orang)
 - Iuran bulanan 100K - 1M IDRX (mock IDR stablecoin)
-- Collateral 1000% (10x total pot) untuk keamanan maksimal
+- Collateral 125% berfungsi sebagai:
+  - 🔒 **Keamanan** - Jaminan kelancaran arisan
+  - 💪 **Komitmen** - Bukti keseriusan peserta
+  - 💰 **Modal Yield** - Menghasilkan double yield
 - Auto-payment dari collateral jika user gagal bayar
 
-### 2. **AI Yield Optimizer**
+### 2. **AI Yield Optimizer & Double Yield**
 - Otomatis deploy collateral ke protokol lending (Moonwell, Aave, dll)
 - Selalu pilih protocol dengan APY tertinggi
-- Double yield: dari collateral + dari pot yang terkumpul
-- User dapat kembali collateral + yield di akhir pool
+- **Double yield:** dari collateral + dari pot yang terkumpul
+- Reward berdasarkan kedisiplinan:
+  - ✅ Tertib bayar → 100% collateral + full yield
+  - ⚠️ Telat bayar → Collateral dipotong + yield proporsional
+  - ❌ Default → Collateral dipotong + yield dari sisa
 
 ### 3. **Reputation System**
 - Soulbound NFT (non-transferable) untuk track reputasi
@@ -222,7 +228,7 @@ Armina menggunakan **Coinbase Smart Wallet** (Base Accounts) untuk:
 - For testnet purposes only
 
 #### ArminaPool.sol
-- Create pool dengan collateral 1000%
+- Create pool dengan collateral 125%
 - Join pool dengan approve + deposit
 - Monthly payment mechanism
 - Chainlink VRF for winner selection
@@ -254,7 +260,7 @@ See [TESTNET_DEPLOYMENT.md](docs/TESTNET_DEPLOYMENT.md) for detailed deployment 
 2. **Claim IDRX** - Get testnet tokens from faucet
 3. **Create/Join Pool** - Choose pool size & monthly amount
 4. **Approve IDRX** - Approve smart contract spending
-5. **Deposit Collateral** - Lock 1000% collateral + first payment
+5. **Deposit Collateral** - Lock 125% collateral + first payment
 6. **Monthly Payment** - Pay before day 10 each month
 7. **Winner Drawing** - Day 20, Chainlink VRF selects winner
 8. **Receive Pot** - Winner gets full pot + yield
@@ -276,22 +282,23 @@ Pool Complete → Distribute Collateral + Yield → NFT Updated
 
 ### Pool Tiers
 
-| Tier | Members | Monthly | Collateral | Total Due | Duration |
-|------|---------|---------|------------|-----------|----------|
-| **Small** | 5 | 100K IDRX | 5M IDRX | 5.1M | 5 months |
-| **Medium** | 10 | 100K IDRX | 10M IDRX | 10.1M | 10 months |
-| **Large** | 20 | 100K IDRX | 20M IDRX | 20.1M | 20 months |
+| Tier | Members | Monthly | Collateral (125%) | Total Due | Duration |
+|------|---------|---------|-------------------|-----------|----------|
+| **Small** | 5 | 100K IDRX | 625K IDRX | 725K | 5 months |
+| **Medium** | 10 | 100K IDRX | 1.25M IDRX | 1.35M | 10 months |
+| **Large** | 20 | 100K IDRX | 2.5M IDRX | 2.6M | 20 months |
 
 ### Collateral Formula
 
 ```
-Collateral = Pool Size × Monthly Amount × 10
+Collateral = 125% × (Pool Size × Monthly Amount)
 Total Due = Collateral + First Month Payment
 ```
 
 **Example**: Pool 10 orang, iuran 100K/bulan
-- Collateral: 10 × 100,000 × 10 = **10,000,000 IDRX**
-- Total due: 10M + 100K = **10,100,000 IDRX**
+- Base: 10 × 100,000 = 1,000,000 IDRX
+- Collateral: 125% × 1,000,000 = **1,250,000 IDRX**
+- Total due: 1.25M + 100K = **1,350,000 IDRX**
 
 ---
 

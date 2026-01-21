@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useAccount } from "wagmi";
+import { useRouter } from "next/navigation";
 import { Pool, PoolTier } from "@/types";
 import { POOL_TIERS, calculateCollateral, formatIDRX } from "@/lib/constants";
 import { Button } from "@/components/ui/Button";
 import { PoolTierSelector } from "@/components/pool/PoolTierSelector";
-import { PoolCardSkeleton, ListSkeleton } from "@/components/ui/LoadingSkeleton";
+import { ListSkeleton } from "@/components/ui/LoadingSkeleton";
+import { useLanguage } from "@/components/providers";
 
 // Mock pools for UI demonstration - Open
 const MOCK_POOLS_OPEN: Pool[] = [
@@ -141,17 +143,21 @@ type TabType = "open" | "active" | "completed";
 
 export default function PoolPage() {
   const { isConnected } = useAccount();
+  const router = useRouter();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>("open");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
   const [selectedTier, setSelectedTier] = useState<PoolTier | null>(null);
   const [participantCount, setParticipantCount] = useState(5);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingPools, setIsLoadingPools] = useState(true);
 
   const tabs: { id: TabType; label: string }[] = [
-    { id: "open", label: "Open" },
-    { id: "active", label: "Active" },
-    { id: "completed", label: "Completed" },
+    { id: "open", label: t.openPools },
+    { id: "active", label: t.activePools2 },
+    { id: "completed", label: t.completedPools },
   ];
 
   const handleCreatePool = async () => {
@@ -163,8 +169,21 @@ export default function PoolPage() {
     setSelectedTier(null);
   };
 
-  const handleJoinPool = async (poolId: bigint) => {
-    console.log("Joining pool:", poolId);
+  const handleJoinPool = (pool: Pool) => {
+    setSelectedPool(pool);
+    setShowJoinModal(true);
+  };
+
+  const confirmJoinPool = async () => {
+    if (!selectedPool) return;
+    setIsLoading(true);
+    // Simulate transaction
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    setIsLoading(false);
+    setShowJoinModal(false);
+    setSelectedPool(null);
+    // Navigate to pool detail or show success
+    router.push(`/pool/${selectedPool.id.toString()}`);
   };
 
   // Simulate loading pools
@@ -177,15 +196,15 @@ export default function PoolPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-slate-900">Arisan Pools</h1>
-          <p className="text-slate-500 text-sm">Join or create a new pool</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t.poolsTitle}</h1>
+          <p className="text-slate-500 text-sm">{t.startArisanDesc}</p>
         </div>
         <Button
           size="sm"
           onClick={() => setShowCreateModal(true)}
           disabled={!isConnected}
         >
-          Create Pool
+          {t.createPool}
         </Button>
       </div>
 
@@ -218,7 +237,8 @@ export default function PoolPage() {
                   <PoolCard
                     key={pool.id.toString()}
                     pool={pool}
-                    onJoin={() => handleJoinPool(pool.id)}
+                    onJoin={() => handleJoinPool(pool)}
+                    isConnected={isConnected}
                   />
                 ))}
                 {MOCK_POOLS_OPEN.length === 0 && (
@@ -334,6 +354,86 @@ export default function PoolPage() {
           </div>
         </div>
       )}
+
+      {/* Join Pool Modal */}
+      {showJoinModal && selectedPool && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => {
+              setShowJoinModal(false);
+              setSelectedPool(null);
+            }}
+          />
+          <div className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl p-6">
+            <h2 className="text-xl font-bold text-slate-900 mb-1">
+              {t.joinPool}
+            </h2>
+            <p className="text-slate-500 text-sm mb-6">
+              {t.reviewPoolDetails}
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <div className="p-4 bg-slate-50 rounded-xl space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">{t.poolTier}</span>
+                  <span className="font-semibold text-slate-900">
+                    {POOL_TIERS[selectedPool.tier].nameId}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">{t.contributionMonth}</span>
+                  <span className="font-semibold text-slate-900">
+                    {formatIDRX(selectedPool.contribution)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">{t.participants}</span>
+                  <span className="font-semibold text-slate-900">
+                    {selectedPool.currentParticipants}/{selectedPool.maxParticipants}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">{t.duration}</span>
+                  <span className="font-semibold text-slate-900">
+                    {selectedPool.maxParticipants} {t.months}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <p className="text-amber-800 font-semibold text-sm mb-1">{t.collateralRequired}</p>
+                <p className="text-amber-900 text-xl font-bold">
+                  {formatIDRX(calculateCollateral(selectedPool.contribution, selectedPool.maxParticipants))}
+                </p>
+                <p className="text-amber-700 text-xs mt-1">
+                  {t.willBeReturned}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => {
+                  setShowJoinModal(false);
+                  setSelectedPool(null);
+                }}
+              >
+                {t.cancel}
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={confirmJoinPool}
+                isLoading={isLoading}
+              >
+                {t.confirmJoin}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -342,9 +442,11 @@ export default function PoolPage() {
 function PoolCard({
   pool,
   onJoin,
+  isConnected,
 }: {
   pool: Pool;
   onJoin: () => void;
+  isConnected: boolean;
 }) {
   const tierConfig = POOL_TIERS[pool.tier];
   const collateral = calculateCollateral(
@@ -398,8 +500,8 @@ function PoolCard({
         </div>
       </div>
 
-      <Button className="w-full" onClick={onJoin}>
-        Join Pool
+      <Button className="w-full" onClick={onJoin} disabled={!isConnected}>
+        {isConnected ? "Join Pool" : "Connect Wallet to Join"}
       </Button>
     </div>
   );

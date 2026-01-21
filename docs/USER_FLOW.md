@@ -32,13 +32,26 @@ This document outlines the finalized user flow and business logic for the Armina
 
 **Payment at Join Time:**
 When user clicks "Join Pool", they must pay:
-1. **Collateral:** Equal to full pot size (Number of Participants × Monthly Contribution)
-   - Example 10-person pool: If monthly = 500K IDRX, collateral = 10 × 500K = 5,000K IDRX
-   - Example 20-person pool: If monthly = 500K IDRX, collateral = 20 × 500K = 10,000K IDRX
+1. **Collateral:** 125% × (Number of Participants × Monthly Contribution)
+   - Example 10-person pool: If monthly = 500K IDRX, collateral = 125% × (10 × 500K) = 6,250K IDRX
+   - Example 20-person pool: If monthly = 500K IDRX, collateral = 125% × (20 × 500K) = 12,500K IDRX
 2. **First Month Contribution:** 100% of monthly amount
    - Example: 500K IDRX
 
-**Total Payment at Join (10-person pool):** 5,500K IDRX (5,000K collateral + 500K first payment)
+**Total Payment at Join (10-person pool):** 6,750K IDRX (6,250K collateral + 500K first payment)
+
+#### Collateral Philosophy
+Collateral bukan hanya untuk keamanan, tapi memiliki 3 fungsi utama:
+1. **Keamanan** - Menjamin kelancaran arisan jika ada peserta yang default
+2. **Komitmen Fee** - Bukti keseriusan peserta untuk ikut sampai selesai
+3. **Modal Yield Farming** - Menghasilkan double yield (collateral yield + pot yield)
+
+**Reward berdasarkan kedisiplinan:**
+| Status Pembayaran | Collateral | Yield |
+|-------------------|------------|-------|
+| ✅ Tertib bayar | 100% kembali | Full yield |
+| ⚠️ Telat bayar | Dipotong + penalty | Yield proporsional |
+| ❌ Default/Gagal | Dipotong sesuai default | Yield dari sisa collateral |
 
 #### Waiting Period
 - User waits for pool to fill up (9 other participants)
@@ -66,7 +79,7 @@ When user clicks "Join Pool", they must pay:
 - Month 3: 500K auto-deducted from wallet
 - ...
 - Month 10: 500K auto-deducted from wallet
-- **Collateral Status:** 5,000K IDRX remains intact throughout! ✅
+- **Collateral Status:** 6,250K IDRX remains intact throughout! ✅
 
 **Payment Flow Example (Missed 3 Payments - Months 6, 8, 9):**
 - Months 1-5: Paid 2,500K from wallet ✅
@@ -75,7 +88,7 @@ When user clicks "Join Pool", they must pay:
 - Month 8: Wallet insufficient → 500K deducted from collateral + 50K penalty
 - Month 9: Wallet insufficient → 500K deducted from collateral + 50K penalty
 - Month 10: Paid 500K from wallet ✅
-- **Collateral Status:** 5,000K - 1,500K (missed payments) - 150K (penalties) = 3,350K remaining
+- **Collateral Status:** 6,250K - 1,500K (missed payments) - 150K (penalties) = 4,600K remaining
 
 ### 5. Monthly Drawing & Winning
 
@@ -103,9 +116,9 @@ When user clicks "Join Pool", they must pay:
 #### Collateral Yield
 - **Each participant's collateral earns yield independently**
 - Yield is tracked per user
-- Example: User deposits 5,000K collateral
+- Example: User deposits 6,250K collateral (125% × 10 × 500K)
   - At 8% APY over 10 months
-  - User earns ~333K IDRX yield on their collateral (8% × 5M × 10/12)
+  - User earns ~417K IDRX yield on their collateral (8% × 6.25M × 10/12)
   - This yield belongs to that user only
 
 #### Pot Yield
@@ -135,17 +148,17 @@ Final Payout = Original Collateral + Collateral Yield - (Missed Payments × Mont
 - Collateral deductions: 0 (never needed)
 
 **Final Settlement:**
-- Original Collateral: 5,000K IDRX
-- Collateral Yield: 333K IDRX (8% APY × 5M × 10/12)
+- Original Collateral: 6,250K IDRX
+- Collateral Yield: 417K IDRX (8% APY × 6.25M × 10/12)
 - Missed Payments Deducted: 0
 - Penalties: 0
 
-**Final Payout:** 5,000K + 333K - 0 - 0 = **5,333K IDRX** ✅
+**Final Payout:** 6,250K + 417K - 0 - 0 = **6,667K IDRX** ✅
 
 **Total Money Cycle:**
-- Spent: 5,000K (wallet payments) + 5,000K (collateral deposited) = 10,000K
-- Received: 5,333K (collateral + yield returned)
-- **Net Profit:** 333K IDRX (pure yield on collateral)
+- Spent: 5,000K (wallet payments) + 6,250K (collateral deposited) = 11,250K
+- Received: 6,667K (collateral + yield returned)
+- **Net Profit:** 417K IDRX (pure yield on collateral)
 
 ---
 
@@ -160,22 +173,22 @@ Final Payout = Original Collateral + Collateral Yield - (Missed Payments × Mont
 - Pot Yield: ~167K IDRX
 
 **Final Settlement:**
-- Original Collateral: 5,000K IDRX
-- Collateral Yield: 333K IDRX
+- Original Collateral: 6,250K IDRX
+- Collateral Yield: 417K IDRX
 - Missed Payments Deducted: 0
 - Penalties: 0
 
-**Final Payout:** 5,000K + 333K = **5,333K IDRX**
+**Final Payout:** 6,250K + 417K = **6,667K IDRX**
 
 **Total Received:**
 - Prize (Month 5): 5,167K IDRX
-- Final settlement: 5,333K IDRX
-- **Grand Total: 10,500K IDRX** 🎉
+- Final settlement: 6,667K IDRX
+- **Grand Total: 11,834K IDRX** 🎉
 
 **Total Money Cycle:**
-- Spent: 5,000K (wallet) + 5,000K (collateral) = 10,000K
-- Received: 10,500K
-- **Net Profit:** 500K IDRX (pot yield + collateral yield - all contributions)
+- Spent: 5,000K (wallet) + 6,250K (collateral) = 11,250K
+- Received: 11,834K
+- **Net Profit:** 584K IDRX (pot yield + collateral yield - all contributions)
 
 ---
 
@@ -187,18 +200,18 @@ Final Payout = Original Collateral + Collateral Yield - (Missed Payments × Mont
 - Penalties: 5 × 50K = 250K IDRX
 
 **Final Settlement:**
-- Original Collateral: 5,000K IDRX
-- Collateral Yield: 333K IDRX
+- Original Collateral: 6,250K IDRX
+- Collateral Yield: 417K IDRX
 - Missed Payments Deducted: 2,500K
 - Penalties: 250K
 
-**Final Payout:** 5,000K + 333K - 2,500K - 250K = **2,583K IDRX**
+**Final Payout:** 6,250K + 417K - 2,500K - 250K = **3,917K IDRX**
 
 **Total Money Cycle:**
-- Spent: 2,500K (wallet) + 5,000K (collateral deposited) = 7,500K
-- Received: 2,583K (collateral return)
+- Spent: 2,500K (wallet) + 6,250K (collateral deposited) = 8,750K
+- Received: 3,917K (collateral return)
 - Payments covered by collateral: 2,500K
-- **Effective Net:** -2,417K IDRX loss (penalties ate into yield)
+- **Effective Net:** -2,333K IDRX loss (penalties ate into yield)
 
 ---
 
@@ -214,17 +227,19 @@ Final Payout = Original Collateral + Collateral Yield - (Missed Payments × Mont
 - **Total Prize: 5,035K IDRX**
 
 **Final Settlement:**
-- Original Collateral: 5,000K IDRX
-- Collateral Yield: 333K IDRX
+- Original Collateral: 6,250K IDRX
+- Collateral Yield: 417K IDRX
 - Missed Payments Deducted: 4,500K (9 months × 500K)
 - Penalties: 450K (9 × 50K)
 
-**Final Payout:** 5,000K + 333K - 4,500K - 450K = **383K IDRX**
+**Final Payout:** 6,250K + 417K - 4,500K - 450K = **1,717K IDRX**
 
 **Total Money Cycle:**
-- Spent: 500K (month 1) + 5,000K (collateral) = 5,500K
-- Received: 5,035K (prize) + 383K (collateral return) = 5,418K
-- **Net Result: -82K IDRX (RUGI!)** ✅ **Anti-kabur mechanism works!**
+- Spent: 500K (month 1) + 6,250K (collateral) = 6,750K
+- Received: 5,035K (prize) + 1,717K (collateral return) = 6,752K
+- **Net Result: +2K IDRX (hampir impas, tidak untung signifikan)** ✅ **Anti-kabur mechanism works!**
+
+**Catatan:** Dengan 125% collateral, pelaku kabur tidak akan rugi besar tapi juga tidak untung. Keuntungan mereka sangat minimal (hanya ~2K) dibanding risiko dan usaha. Ini tetap menjadi disinsentif yang efektif.
 
 ### 8. Post-Pool
 
@@ -247,7 +262,7 @@ Final Payout = Original Collateral + Collateral Yield - (Missed Payments × Mont
 | **Pool Sizes** | Fixed + Flexible (Q1: A+B) | Default 10 participants; options for 5, 10, 15, 20 person pools |
 | **Pool Start** | Full-based | Requires all slots filled before starting |
 | **Join Payment** | Upfront | Collateral (= pot size) + first month contribution |
-| **Collateral Amount** | Pot Size (Q2: A) | Participants × Monthly Amount (anti-kabur: 10 person = 10×, 20 person = 20×) |
+| **Collateral Amount** | 125% × Pot Size | 125% × (Participants × Monthly Amount) |
 | **Monthly Payments** | Wallet-based (Q3: Hybrid) | Auto-deduct from wallet; collateral only used if wallet insufficient |
 | **Missed Payment Handling** | Collateral backup | Deduct from collateral + 10% penalty per missed payment |
 | **Winner Payout** | Pot + Pot Yield (Q4: B) | Winner gets pot and pot's yield only, not others' collateral yield |
@@ -264,13 +279,13 @@ Final Payout = Original Collateral + Collateral Yield - (Missed Payments × Mont
 The collateral and payment system has been finalized with the following approach:
 
 **Collateral Strategy:**
-- Collateral = Full pot size (Number of Participants × Monthly Contribution)
+- Collateral = 125% × (Number of Participants × Monthly Contribution)
 - Monthly payments from wallet (auto-deduct)
 - Collateral only touched for missed payments
 - Full collateral + yield returned if perfect attendance
 
 **Anti-Kabur Verification:**
-- Winner who stops paying after winning Month 1 experiences net loss of 82K IDRX
+- Winner who stops paying after winning Month 1 only gains ~2K IDRX (negligible profit)
 - Mechanism successfully prevents fraud while maintaining accessibility
 - See Example 4 above for detailed calculation
 
@@ -308,9 +323,9 @@ function calculateFinalPayout(uint256 poolId, address participant) external view
 - Clear breakdown showing:
   - Pool size: 10 participants
   - Monthly contribution: 500K IDRX
-  - Collateral required (pot size): 5,000K IDRX
+  - Collateral required (125% × pot): 6,250K IDRX
   - First month payment: 500K IDRX
-  - **Total due now: 5,500K IDRX**
+  - **Total due now: 6,750K IDRX**
   - Monthly wallet balance needed: 500K IDRX (for auto-deduct)
   - Ensure wallet has sufficient IDRX balance
 
@@ -332,7 +347,7 @@ interface Pool {
   id: string;
   monthlyAmount: number; // in cents (IDRX)
   poolSize: number; // 5, 10, 15, or 20 participants
-  collateralRequired: number; // poolSize × monthlyAmount
+  collateralRequired: number; // 125% × (poolSize × monthlyAmount)
   currentParticipants: number;
   status: 'open' | 'full' | 'active' | 'completed';
   drawingDate: number; // day of month (10)
@@ -345,7 +360,7 @@ interface Pool {
 interface Participant {
   userId: string;
   poolId: string;
-  collateralDeposited: number; // Full pot size
+  collateralDeposited: number; // 125% × (poolSize × monthlyAmount)
   collateralYieldEarned: number; // Tracked separately
   collateralUsedForPayments: number; // Amount deducted for missed payments
   paymentHistory: Payment[];
@@ -405,9 +420,9 @@ All major stakeholder questions have been answered:
 1. ✅ **Collateral Mechanism:** Wallet-based payments with collateral backup (Q3: Hybrid)
 2. ✅ **Penalty Rate:** 10% per missed payment
 3. ✅ **Pool Sizes:** Flexible options (5, 10, 15, 20 participants) - Q1: A+B
-4. ✅ **Collateral Amount:** Equal to pot size (poolSize × monthlyAmount) - Q2: A
+4. ✅ **Collateral Amount:** 125% × (poolSize × monthlyAmount)
 5. ✅ **Final Settlement:** Collateral + yield - missed payments - penalties - Q3
-6. ✅ **Anti-Kabur:** Verified working (see Example 4: -82K net loss)
+6. ✅ **Anti-Kabur:** Verified working (see Example 4: negligible +2K profit)
 
 ---
 

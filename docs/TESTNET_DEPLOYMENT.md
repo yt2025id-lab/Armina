@@ -42,7 +42,7 @@ await idrxContract.faucet();
 - ✅ Create pools (5, 10, 15, 20 members)
 - ✅ Join pools with collateral
 - ✅ Monthly payment processing
-- ✅ Collateral management with 1000% requirement
+- ✅ Collateral management with 125% requirement
 - ✅ Winner selection via Chainlink VRF
 - ✅ 10% penalty for missed payments
 - ✅ 10% platform fee on yield

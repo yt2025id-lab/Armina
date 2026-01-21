@@ -10,7 +10,7 @@ const MOCK_POOL = {
   monthlyAmount: 50000000, // 500K IDRX in cents
   poolSize: 10,
   currentParticipants: 7,
-  collateralRequired: 500000000, // 5M IDRX in cents
+  collateralRequired: 625000000, // 125% × (10 × 500K) = 6.25M IDRX in cents
   status: "open" as const,
   creator: "0x1234...5678",
   drawingDay: 10,
@@ -135,9 +135,9 @@ export default function PoolDetailsPage({
           <div className="space-y-3 mb-4">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-white/70 text-sm">Security Collateral</p>
+                <p className="text-white/70 text-sm">Security Collateral (125%)</p>
                 <p className="text-xs text-white/60">
-                  = {pool.poolSize} × {formatIDRX(pool.monthlyAmount)} (pot size)
+                  = 125% × ({pool.poolSize} × {formatIDRX(pool.monthlyAmount)})
                 </p>
               </div>
               <p className="text-xl font-bold">{formatIDRX(pool.collateralRequired)} IDRX</p>

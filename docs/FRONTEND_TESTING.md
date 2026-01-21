@@ -88,7 +88,7 @@ Buka http://localhost:3000
 - ✅ Monthly amount presets work
 - ✅ Custom amount input works
 - ✅ Calculations correct
-  - Collateral = poolSize × monthlyAmount × 10 (1000%)
+  - Collateral = 125% × (poolSize × monthlyAmount)
   - Total Due = collateral + monthlyAmount
 - ✅ Approve IDRX transaction
 - ✅ Create pool transaction
@@ -102,10 +102,10 @@ Buka http://localhost:3000
 3. Check summary:
    - Pool Size: 5 Participants
    - Monthly Contribution: 100,000 IDRX
-   - Collateral Required: 5,000,000 IDRX (1000% = 10x total pot)
-   - Total Due at Join: 5,100,000 IDRX
+   - Collateral Required: 625,000 IDRX (125% × pot)
+   - Total Due at Join: 725,000 IDRX
 4. Click "Create Pool"
-5. Approve IDRX spending (5.1M)
+5. Approve IDRX spending (725K)
 6. Confirm create transaction
 7. Wait for success
 
@@ -115,10 +115,10 @@ Buka http://localhost:3000
 3. Enter "100000" (100K)
 4. Check summary updates:
    - Monthly Contribution: 100,000 IDRX
-   - Collateral Required: 10,000,000 IDRX (10 people × 100K × 10)
-   - Total Due: 10,100,000 IDRX
+   - Collateral Required: 1,250,000 IDRX (125% × 10 × 100K)
+   - Total Due: 1,350,000 IDRX
 5. Note: Need more IDRX! Go to faucet
-6. Claim faucet multiple times until have 10.2M+ IDRX
+6. Claim faucet multiple times until have 1.4M+ IDRX
 7. Return and create pool
 
 **Expected Results**:
@@ -334,22 +334,22 @@ Accounts 2-5 (Joiners):
 ### Small Pool (Testing)
 - Size: 5 members
 - Monthly: 100K IDRX
-- Collateral: 5M IDRX (1000% = 5 × 100K × 10)
-- Total: 5.1M IDRX
+- Collateral: 625K IDRX (125% × 5 × 100K)
+- Total: 725K IDRX
 - Duration: 5 months
 
 ### Standard Pool
 - Size: 10 members
 - Monthly: 100K IDRX
-- Collateral: 10M IDRX (1000% = 10 × 100K × 10)
-- Total: 10.1M IDRX
+- Collateral: 1.25M IDRX (125% × 10 × 100K)
+- Total: 1.35M IDRX
 - Duration: 10 months
 
 ### Large Pool
 - Size: 20 members
 - Monthly: 100K IDRX
-- Collateral: 20M IDRX (1000% = 20 × 100K × 10)
-- Total: 20.1M IDRX
+- Collateral: 2.5M IDRX (125% × 20 × 100K)
+- Total: 2.6M IDRX
 - Duration: 20 months
 
 ---

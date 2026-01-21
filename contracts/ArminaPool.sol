@@ -36,7 +36,7 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         uint256 id;
         uint256 monthlyAmount; // in IDRX wei
         uint8 poolSize; // 5, 10, 15, or 20
-        uint256 collateralRequired; // poolSize × monthlyAmount
+        uint256 collateralRequired; // 125% × (poolSize × monthlyAmount)
         uint8 currentParticipants;
         PoolStatus status;
         uint8 drawingDay; // Day of month (e.g., 10)
@@ -180,7 +180,7 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         pool.id = poolId;
         pool.monthlyAmount = monthlyAmount;
         pool.poolSize = poolSize;
-        pool.collateralRequired = monthlyAmount * poolSize;
+        pool.collateralRequired = (monthlyAmount * poolSize * 125) / 100; // 125%
         pool.currentParticipants = 0;
         pool.status = PoolStatus.Open;
         pool.drawingDay = 10; // Default to 10th of month

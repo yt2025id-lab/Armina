@@ -74,7 +74,7 @@ export function usePoolDetails(poolId: bigint | undefined) {
         address: data[0] as `0x${string}`,
         tier: TIER_MAP[0] || "small", // Need to determine tier from contribution
         contribution: data[1],
-        collateralRequired: data[1] * BigInt(data[2]) * BigInt(10), // 1000% = 10x
+        collateralRequired: (data[1] * BigInt(data[2]) * BigInt(125)) / BigInt(100), // 125%
         maxParticipants: Number(data[2]),
         currentParticipants: Number(data[3]),
         currentRound: Number(data[4]),

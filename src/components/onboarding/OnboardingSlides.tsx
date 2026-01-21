@@ -2,100 +2,101 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useLanguage } from "@/components/providers";
 
 interface OnboardingSlidesProps {
   onComplete: () => void;
 }
 
-const slides = [
-  {
-    id: 1,
-    title: "ARMINA",
-    subtitle: "Welcome to",
-    description:
-      "The first on-chain rotating savings platform (arisan) for the Indonesian community. Transparent, secure, and auto-generating yield.",
-    gradient: "from-[#1e2a4a] via-[#2a3a5c] to-[#1e2a4a]",
-  },
-  {
-    id: 2,
-    title: "How It Works",
-    subtitle: "Arisan Mini App",
-    steps: [
-      { num: "01", text: "Choose a pool that fits your budget" },
-      { num: "02", text: "Deposit collateral + first contribution" },
-      { num: "03", text: "Pay contribution before day 10" },
-      { num: "04", text: "Day 20: Winner drawing" },
-      { num: "05", text: "Winner receives pot + yield monthly" },
-      { num: "06", text: "Pool ends, collateral + yield returned" },
-    ],
-    gradient: "from-[#2a3a5c] via-[#1e2a4a] to-[#2a3a5c]",
-  },
-  {
-    id: 3,
-    title: "Collateral",
-    subtitle: "1000%",
-    description: "Maximum protection for all participants",
-    details: [
-      { icon: "◈", label: "Collateral", value: "1000% (10x total pot)" },
-      { icon: "◈", label: "If default", value: "Auto cover payment" },
-      { icon: "◈", label: "Pool ends", value: "100% back + yield" },
-      { icon: "◈", label: "High security", value: "Fully protected" },
-    ],
-    gradient: "from-[#1e2a4a] via-[#3a4a6c] to-[#1e2a4a]",
-  },
-  {
-    id: 4,
-    title: "Double",
-    subtitle: "Yield",
-    description: "AI Optimizer automatically selects the highest APY lending protocol",
-    yields: [
-      {
-        type: "Collateral Yield",
-        desc: "Your collateral generates yield while pool is active, automatically deployed to highest APY protocol",
-        color: "text-emerald-400"
-      },
-      {
-        type: "Pot Yield",
-        desc: "Collected contributions earn yield during collection period",
-        color: "text-cyan-400"
-      },
-    ],
-    protocols: ["Moonwell", "Aave", "Compound", "Morpho", "Fluid", "Euler", "Spark", "Venus", "Benqi", "Radiant"],
-    gradient: "from-[#2a3a5c] via-[#1e2a4a] to-[#3a4a6c]",
-  },
-  {
-    id: 5,
-    title: "Reputation",
-    subtitle: "System",
-    description: "Build your reputation score to climb the leaderboard",
-    scores: [
-      { action: "On-time payment", points: "+10", positive: true },
-      { action: "Complete pool", points: "+50", positive: true },
-      { action: "Late payment", points: "-20", positive: false },
-      { action: "Default", points: "-100", positive: false },
-    ],
-    levels: [
-      { name: "Bronze", discount: "0%", color: "bg-amber-500/20 text-amber-300" },
-      { name: "Silver", discount: "10%", color: "bg-slate-300/20 text-slate-200" },
-      { name: "Gold", discount: "20%", color: "bg-yellow-500/20 text-yellow-300" },
-      { name: "Diamond", discount: "25%", color: "bg-cyan-400/20 text-cyan-300" },
-    ],
-    gradient: "from-[#1e2a4a] via-[#2a3a5c] to-[#1e2a4a]",
-  },
-  {
-    id: 6,
-    title: "Ready to",
-    subtitle: "Start?",
-    description: "Mint your free Reputation NFT to begin. This NFT is Soulbound and non-transferable.",
-    cta: true,
-    gradient: "from-[#3a4a6c] via-[#1e2a4a] to-[#2a3a5c]",
-  },
-];
-
 export function OnboardingSlides({ onComplete }: OnboardingSlidesProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
+  const { t } = useLanguage();
+
+  const slides = [
+    {
+      id: 1,
+      title: "ARMINA",
+      subtitle: t.welcomeTo,
+      description: t.onboardingDesc,
+      gradient: "from-[#1d2856] via-[#1d2856] to-[#1d2856]",
+    },
+    {
+      id: 2,
+      title: t.howItWorks,
+      subtitle: t.arisanMiniApp,
+      steps: [
+        { num: "01", text: t.step1 },
+        { num: "02", text: t.step2 },
+        { num: "03", text: t.step3 },
+        { num: "04", text: t.step4 },
+        { num: "05", text: t.step5 },
+        { num: "06", text: t.step6 },
+      ],
+      gradient: "from-[#2a3a5c] via-[#1e2a4a] to-[#2a3a5c]",
+    },
+    {
+      id: 3,
+      title: t.collateral,
+      subtitle: "125%",
+      description: t.maxProtection,
+      details: [
+        { icon: "◈", label: t.collateralAmountLabel, value: t.collateralAmountValue },
+        { icon: "◈", label: t.latePaymentLabel, value: t.latePaymentValue },
+        { icon: "◈", label: t.poolCompletedLabel, value: t.poolCompletedValue },
+        { icon: "◈", label: t.defaultLabel, value: t.defaultValue },
+      ],
+      gradient: "from-[#1e2a4a] via-[#3a4a6c] to-[#1e2a4a]",
+    },
+    {
+      id: 4,
+      title: t.yieldDouble,
+      subtitle: "Yield",
+      description: t.yieldDesc,
+      yields: [
+        {
+          type: t.collateralYield,
+          desc: t.collateralYieldDesc,
+          color: "text-emerald-400"
+        },
+        {
+          type: t.potYield,
+          desc: t.potYieldDesc,
+          color: "text-cyan-400"
+        },
+      ],
+      protocols: ["Moonwell", "Aave", "Compound", "Morpho", "Fluid", "Euler", "Spark", "Venus", "Benqi", "Radiant"],
+      gradient: "from-[#2a3a5c] via-[#1e2a4a] to-[#3a4a6c]",
+    },
+    {
+      id: 5,
+      title: t.reputation,
+      subtitle: t.system,
+      description: t.reputationDesc,
+      scores: [
+        { action: t.onTimePayment, points: "+10", positive: true },
+        { action: t.completePool, points: "+50", positive: true },
+        { action: t.latePayment, points: "-20", positive: false },
+        { action: t.default, points: "-100", positive: false },
+      ],
+      levels: [
+        { name: "Bronze", discount: "0%", color: "bg-amber-500/20 text-amber-300" },
+        { name: "Silver", discount: "10%", color: "bg-slate-300/20 text-slate-200" },
+        { name: "Gold", discount: "20%", color: "bg-yellow-500/20 text-yellow-300" },
+        { name: "Diamond", discount: "25%", color: "bg-cyan-400/20 text-cyan-300" },
+      ],
+      gradient: "from-[#1e2a4a] via-[#2a3a5c] to-[#1e2a4a]",
+    },
+    {
+      id: 6,
+      title: t.readyTo,
+      subtitle: t.start,
+      description: t.mintNftDesc,
+      cta: true,
+      gradient: "from-[#3a4a6c] via-[#1e2a4a] to-[#2a3a5c]",
+    },
+  ];
 
   const handleNext = () => {
     if (isAnimating) return;
@@ -172,7 +173,7 @@ export function OnboardingSlides({ onComplete }: OnboardingSlidesProps) {
             onClick={handleSkip}
             className="text-white/40 hover:text-white/70 text-sm font-medium transition-colors"
           >
-            Skip
+            {t.skip}
           </button>
         </div>
 
@@ -320,7 +321,7 @@ export function OnboardingSlides({ onComplete }: OnboardingSlidesProps) {
             </div>
           )}
 
-          {/* CTA (Slide 6) - Bilingual */}
+          {/* CTA (Slide 6) */}
           {slide.cta && (
             <div className="flex-1 flex flex-col items-center justify-center">
               <div className="relative">
@@ -336,7 +337,7 @@ export function OnboardingSlides({ onComplete }: OnboardingSlidesProps) {
           )}
         </div>
 
-        {/* Bottom Navigation - Bilingual */}
+        {/* Bottom Navigation */}
         <div className="px-6 pb-8 space-y-4">
           <div className="flex gap-3">
             {currentSlide > 0 && (
@@ -344,14 +345,14 @@ export function OnboardingSlides({ onComplete }: OnboardingSlidesProps) {
                 onClick={handlePrev}
                 className="flex-1 py-3.5 px-4 bg-white/[0.08] backdrop-blur-sm text-white rounded-2xl font-medium hover:bg-white/[0.12] transition-all border border-white/10"
               >
-                Back
+                {t.back}
               </button>
             )}
             <button
               onClick={handleNext}
               className="flex-1 py-3.5 px-4 bg-white text-[#1e2a4a] rounded-2xl font-semibold hover:bg-white/90 transition-all shadow-lg shadow-white/10"
             >
-              {currentSlide === slides.length - 1 ? "Start Now" : "Next"}
+              {currentSlide === slides.length - 1 ? t.startNow : t.next}
             </button>
           </div>
         </div>

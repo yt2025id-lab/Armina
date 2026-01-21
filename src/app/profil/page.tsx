@@ -7,7 +7,7 @@ import { formatUnits } from "viem";
 import { Button } from "@/components/ui/Button";
 import { formatAddress, formatIDRX } from "@/lib/constants";
 import { CONTRACTS } from "@/contracts/abis";
-import { useOnboarding } from "@/components/providers";
+import { useOnboarding, useLanguage } from "@/components/providers";
 import { ReputationLevel } from "@/types";
 
 // Mock user profile data
@@ -51,6 +51,7 @@ export default function ProfilPage() {
   const { address } = useAccount();
   const [isClaimingFaucet, setIsClaimingFaucet] = useState(false);
   const { showOnboarding } = useOnboarding();
+  const { t } = useLanguage();
 
   // Get ETH balance
   const { data: ethBalance } = useBalance({
@@ -84,7 +85,7 @@ export default function ProfilPage() {
               </span>
             </div>
             <div className="flex-1">
-              <p className="text-white/70 text-sm">Wallet Address</p>
+              <p className="text-white/70 text-sm">{t.walletAddress}</p>
               <p className="font-mono font-semibold">
                 {formatAddress(displayAddress)}
               </p>
@@ -93,14 +94,14 @@ export default function ProfilPage() {
         </div>
         <div className="p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-slate-500 text-sm">Reputation Status</span>
+            <span className="text-slate-500 text-sm">{t.reputationStatus}</span>
             <span className={`px-3 py-1 ${levelColor.bg} ${levelColor.text} text-xs font-medium rounded-full`}>
               {LEVEL_LABELS[userProfile.reputationLevel]} · {userProfile.reputationScore} pts
             </span>
           </div>
           {userProfile.collateralDiscount > 0 && (
             <div className="flex items-center justify-between">
-              <span className="text-slate-500 text-sm">Collateral Discount</span>
+              <span className="text-slate-500 text-sm">{t.collateralDiscount}</span>
               <span className="text-green-600 font-semibold text-sm">
                 -{userProfile.collateralDiscount}%
               </span>
@@ -111,43 +112,43 @@ export default function ProfilPage() {
 
       {/* Stats Grid */}
       <div className="space-y-3">
-        <p className="font-semibold text-slate-900">Statistics</p>
+        <p className="font-semibold text-slate-900">{t.statistics}</p>
         <div className="grid grid-cols-2 gap-3">
           <div className="p-4 bg-[#1e2a4a]/5 rounded-2xl border border-[#1e2a4a]/10">
             <p className="text-2xl font-bold text-[#1e2a4a]">{userProfile.stats.poolsActive}</p>
-            <p className="text-slate-500 text-sm">Active Pools</p>
+            <p className="text-slate-500 text-sm">{t.activePools}</p>
           </div>
           <div className="p-4 bg-[#1e2a4a]/5 rounded-2xl border border-[#1e2a4a]/10">
             <p className="text-2xl font-bold text-[#1e2a4a]">{userProfile.stats.poolsCompleted}</p>
-            <p className="text-slate-500 text-sm">Completed Pools</p>
+            <p className="text-slate-500 text-sm">{t.completedPools2}</p>
           </div>
           <div className="p-4 bg-green-50 rounded-2xl border border-green-100">
             <p className="text-2xl font-bold text-green-600">{formatIDRX(userProfile.stats.totalEarned)}</p>
-            <p className="text-slate-500 text-sm">Total Pot Received</p>
+            <p className="text-slate-500 text-sm">{t.totalPotReceived}</p>
           </div>
           <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
             <p className="text-2xl font-bold text-emerald-600">+{formatIDRX(userProfile.stats.totalYield)}</p>
-            <p className="text-slate-500 text-sm">Total Yield</p>
+            <p className="text-slate-500 text-sm">{t.totalYield}</p>
           </div>
         </div>
 
         {/* Payment Stats */}
         <div className="p-4 border border-slate-200 rounded-2xl">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-slate-700 font-medium">Payment History</span>
+            <span className="text-slate-700 font-medium">{t.paymentHistory}</span>
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-slate-500 text-sm">On Time</span>
+                <span className="text-slate-500 text-sm">{t.onTime}</span>
               </div>
               <p className="text-xl font-bold text-slate-900 mt-1">{userProfile.stats.onTimePayments}</p>
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                <span className="text-slate-500 text-sm">Late</span>
+                <span className="text-slate-500 text-sm">{t.late}</span>
               </div>
               <p className="text-xl font-bold text-slate-900 mt-1">{userProfile.stats.latePayments}</p>
             </div>
@@ -157,7 +158,7 @@ export default function ProfilPage() {
 
       {/* Balances */}
       <div className="space-y-3">
-        <p className="font-semibold text-slate-900">Balance</p>
+        <p className="font-semibold text-slate-900">{t.balance}</p>
 
         <div className="p-4 border border-slate-200 rounded-2xl flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -166,7 +167,7 @@ export default function ProfilPage() {
             </div>
             <div>
               <p className="font-medium text-slate-900">ETH (Base Sepolia)</p>
-              <p className="text-slate-500 text-xs">Gas fee token</p>
+              <p className="text-slate-500 text-xs">{t.gasFeeToken}</p>
             </div>
           </div>
           <p className="font-semibold text-slate-900">
@@ -184,7 +185,7 @@ export default function ProfilPage() {
             </div>
             <div>
               <p className="font-medium text-slate-900">IDRX</p>
-              <p className="text-slate-500 text-xs">Arisan token</p>
+              <p className="text-slate-500 text-xs">{t.arisanToken}</p>
             </div>
           </div>
           <p className="font-semibold text-slate-900">{formatIDRX(idrxBalance)}</p>
@@ -193,7 +194,7 @@ export default function ProfilPage() {
 
       {/* Recent Activity */}
       <div className="space-y-3">
-        <p className="font-semibold text-slate-900">Recent Activity</p>
+        <p className="font-semibold text-slate-900">{t.recentActivity}</p>
         <div className="border border-slate-200 rounded-2xl divide-y divide-slate-100">
           {userProfile.recentActivity.map((activity, index) => (
             <div key={index} className="p-4 flex items-center justify-between">
@@ -232,29 +233,29 @@ export default function ProfilPage() {
 
       {/* Faucet */}
       <div className="p-5 border border-slate-200 rounded-2xl">
-        <p className="font-semibold text-slate-900 mb-1">IDRX Faucet</p>
+        <p className="font-semibold text-slate-900 mb-1">{t.idrxFaucet}</p>
         <p className="text-slate-500 text-sm mb-4">
-          Get 10,000,000 IDRX free for testing. 24-hour cooldown.
+          {t.faucetCooldown}
         </p>
         <Button
           className="w-full"
           onClick={handleClaimFaucet}
           isLoading={isClaimingFaucet}
         >
-          Claim 10,000,000 IDRX
+          {t.claimIdrxAmount}
         </Button>
       </div>
 
       {/* Links */}
       <div className="space-y-3">
-        <p className="font-semibold text-slate-900">Links</p>
+        <p className="font-semibold text-slate-900">{t.links}</p>
 
         <button
           onClick={showOnboarding}
           className="block w-full p-4 border border-slate-200 rounded-2xl hover:border-[#1e2a4a] hover:bg-[#1e2a4a]/5 transition-all text-left"
         >
           <div className="flex items-center justify-between">
-            <span className="text-slate-700">How to Play</span>
+            <span className="text-slate-700">{t.howToPlay}</span>
             <span className="text-slate-400 text-sm">→</span>
           </div>
         </button>
@@ -266,7 +267,7 @@ export default function ProfilPage() {
           className="block p-4 border border-slate-200 rounded-2xl hover:border-[#1e2a4a] hover:bg-[#1e2a4a]/5 transition-all"
         >
           <div className="flex items-center justify-between">
-            <span className="text-slate-700">View on BaseScan</span>
+            <span className="text-slate-700">{t.viewOnBaseScan}</span>
             <span className="text-slate-400 text-sm">→</span>
           </div>
         </a>
@@ -279,7 +280,7 @@ export default function ProfilPage() {
             className="block p-4 border border-slate-200 rounded-2xl hover:border-[#1e2a4a] hover:bg-[#1e2a4a]/5 transition-all"
           >
             <div className="flex items-center justify-between">
-              <span className="text-slate-700">IDRX Contract</span>
+              <span className="text-slate-700">{t.idrxContract}</span>
               <span className="text-slate-400 text-sm">→</span>
             </div>
           </a>

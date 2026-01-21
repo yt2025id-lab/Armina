@@ -4,6 +4,7 @@ import { useAccount, useDisconnect } from "wagmi";
 import { formatUnits } from "viem";
 import { formatAddress } from "@/lib/constants";
 import { useIDRXBalance } from "@/hooks/useIDRX";
+import { usePathname } from "next/navigation";
 import {
   ConnectWallet,
   Wallet,
@@ -13,6 +14,8 @@ import {
 import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity";
 
 export function Header() {
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { data: balance, isLoading } = useIDRXBalance(address);
@@ -48,26 +51,29 @@ export function Header() {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          {isConnected && address ? (
-            <Wallet>
-              <WalletDropdown>
-                <Identity address={address} schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9">
-                  <Avatar className="w-6 h-6" />
-                  <Name className="text-sm text-white" />
-                  <Address className="text-xs text-white/70 font-mono" />
-                </Identity>
-                <WalletDropdownDisconnect className="text-xs" />
-              </WalletDropdown>
-            </Wallet>
-          ) : (
-            <ConnectWallet>
-              <button className="text-xs bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
-                Connect Wallet
-              </button>
-            </ConnectWallet>
-          )}
-        </div>
+        {/* Hide connect wallet on homepage - it has its own connect button */}
+        {!isHomePage && (
+          <div className="flex items-center gap-3">
+            {isConnected && address ? (
+              <Wallet>
+                <WalletDropdown>
+                  <Identity address={address} schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9">
+                    <Avatar className="w-6 h-6" />
+                    <Name className="text-sm text-white" />
+                    <Address className="text-xs text-white/70 font-mono" />
+                  </Identity>
+                  <WalletDropdownDisconnect className="text-xs" />
+                </WalletDropdown>
+              </Wallet>
+            ) : (
+              <ConnectWallet>
+                <button className="text-xs bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
+                  Connect Wallet
+                </button>
+              </ConnectWallet>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );

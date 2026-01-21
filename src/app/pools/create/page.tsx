@@ -40,7 +40,7 @@ export default function CreatePoolPage() {
 
   // Calculate derived values (in IDRX, not wei)
   const finalAmount = useCustom && customAmount ? parseInt(customAmount) : monthlyAmount;
-  const collateralRequired = finalAmount * poolSize * 10; // 1000% = 10x total pot
+  const collateralRequired = Math.floor((finalAmount * poolSize * 125) / 100); // 125% × (participants × contribution)
   const totalDueAtJoin = collateralRequired + finalAmount;
 
   const formatIDRX = (amount: number) => {
@@ -233,13 +233,13 @@ export default function CreatePoolPage() {
 
             <div className="pt-3 border-t border-white/20">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-white/70">Collateral Required</span>
+                <span className="text-white/70">Collateral Required (125%)</span>
                 <span className="font-bold text-lg">
                   {formatIDRX(collateralRequired)} IDRX
                 </span>
               </div>
               <p className="text-xs text-white/60">
-                = {poolSize} × {formatIDRX(finalAmount)} IDRX (pot size)
+                = 125% × ({poolSize} × {formatIDRX(finalAmount)}) IDRX
               </p>
             </div>
           </div>

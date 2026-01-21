@@ -39,7 +39,7 @@ export const POOL_TIERS: Record<PoolTier, PoolTierConfig> = {
 };
 
 // Collateral Configuration
-export const COLLATERAL_RATIO = 1000; // 1000% (10x total pot)
+export const COLLATERAL_RATIO = 125; // 125% of (participants × contribution)
 export const MAX_COLLATERAL_DISCOUNT = 25; // 25% max discount for high reputation
 
 // Reputation Levels
@@ -62,14 +62,16 @@ export const REPUTATION_POINTS = {
 };
 
 // Calculate collateral required
+// Formula: 125% × (participants × contribution)
 export function calculateCollateral(
   contribution: bigint,
-  totalRounds: number,
+  totalParticipants: number,
   discountPercent: number = 0
 ): bigint {
-  const baseCollateral =
-    (contribution * BigInt(totalRounds) * BigInt(COLLATERAL_RATIO)) /
-    BigInt(100);
+  // Base = participants × contribution
+  const base = contribution * BigInt(totalParticipants);
+  // Collateral = 125% of base
+  const baseCollateral = (base * BigInt(COLLATERAL_RATIO)) / BigInt(100);
   const discount = (baseCollateral * BigInt(discountPercent)) / BigInt(100);
   return baseCollateral - discount;
 }
