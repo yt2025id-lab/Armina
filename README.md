@@ -401,7 +401,7 @@ npx hardhat test test/ArminaPool.test.ts
 
 ## 🌐 Live Demo
 
-- **Frontend**: [https://armina.vercel.app](https://armina.vercel.app) *(if deployed)*
+- **Frontend**: [https://armina-finance.vercel.app](https://armina-finance.vercel.app)
 - **Network**: Base Sepolia Testnet
 - **Explorer**: [BaseScan Sepolia](https://sepolia.basescan.org)
 
@@ -416,7 +416,7 @@ npx hardhat test test/ArminaPool.test.ts
    - [Alchemy Base Sepolia Faucet](https://www.alchemy.com/faucets/base-sepolia)
 
 3. Claim IDRX:
-   - Visit [/faucet](http://localhost:3000/faucet)
+   - Visit [/faucet](https://armina-finance.vercel.app/faucet)
    - Click "Claim 10,000 IDRX"
 
 ---
