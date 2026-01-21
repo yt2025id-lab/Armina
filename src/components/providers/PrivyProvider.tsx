@@ -36,6 +36,11 @@ export function PrivyProvider({ children }: { children: ReactNode }) {
           showWalletLoginFirst: false,
         },
         loginMethods: ["email", "google", "wallet"],
+        embeddedWallets: {
+          ethereum: {
+            createOnLogin: "users-without-wallets",
+          },
+        },
         defaultChain: baseSepolia,
         supportedChains: [baseSepolia],
       }}
