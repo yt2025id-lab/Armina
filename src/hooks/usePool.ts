@@ -3,6 +3,7 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ARMINA_FACTORY_ABI, ARMINA_POOL_ABI, CONTRACTS } from "@/contracts/abis";
 import { Pool, PoolTier } from "@/types";
+import { usePaymasterCapabilities } from "./usePaymaster";
 
 // Tier mapping from contract enum to our types
 const TIER_MAP: Record<number, PoolTier> = {
@@ -91,6 +92,7 @@ export function usePoolDetails(poolId: bigint | undefined) {
 
 export function useCreatePool() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const capabilities = usePaymasterCapabilities();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -110,7 +112,8 @@ export function useCreatePool() {
       abi: ARMINA_FACTORY_ABI,
       functionName: "createPool",
       args: [TIER_ENUM[tier], BigInt(participantCount)],
-    });
+      ...(capabilities && { capabilities }),
+    } as any);
   };
 
   return {
@@ -201,6 +204,7 @@ export function useCollateralForUser(
 
 export function useJoinPool() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const capabilities = usePaymasterCapabilities();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -211,7 +215,8 @@ export function useJoinPool() {
       address: poolAddress,
       abi: ARMINA_POOL_ABI,
       functionName: "join",
-    });
+      ...(capabilities && { capabilities }),
+    } as any);
   };
 
   return {
@@ -226,6 +231,7 @@ export function useJoinPool() {
 
 export function useContribute() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const capabilities = usePaymasterCapabilities();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -236,7 +242,8 @@ export function useContribute() {
       address: poolAddress,
       abi: ARMINA_POOL_ABI,
       functionName: "contribute",
-    });
+      ...(capabilities && { capabilities }),
+    } as any);
   };
 
   return {
@@ -251,6 +258,7 @@ export function useContribute() {
 
 export function useClaimCollateral() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const capabilities = usePaymasterCapabilities();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -261,7 +269,8 @@ export function useClaimCollateral() {
       address: poolAddress,
       abi: ARMINA_POOL_ABI,
       functionName: "claimCollateral",
-    });
+      ...(capabilities && { capabilities }),
+    } as any);
   };
 
   return {

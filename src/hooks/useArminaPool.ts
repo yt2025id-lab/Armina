@@ -1,6 +1,7 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { ARMINA_POOL_ADDRESS } from '@/contracts/config';
 import ArminaPoolABI from '@/contracts/abis/ArminaPool.json';
+import { usePaymasterCapabilities } from './usePaymaster';
 
 /**
  * Hook for reading ArminaPool contract data
@@ -8,6 +9,9 @@ import ArminaPoolABI from '@/contracts/abis/ArminaPool.json';
 export function useArminaPool() {
   const { writeContractAsync, data: hash, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const capabilities = usePaymasterCapabilities();
+
+  const paymasterOpts = capabilities ? { capabilities } : {};
 
   // Create a new pool
   const createPool = async (monthlyAmount: bigint, poolSize: number) => {
@@ -16,7 +20,8 @@ export function useArminaPool() {
       abi: ArminaPoolABI.abi,
       functionName: 'createPool',
       args: [monthlyAmount, poolSize],
-    });
+      ...paymasterOpts,
+    } as any);
   };
 
   // Join an existing pool
@@ -26,7 +31,8 @@ export function useArminaPool() {
       abi: ArminaPoolABI.abi,
       functionName: 'joinPool',
       args: [poolId],
-    });
+      ...paymasterOpts,
+    } as any);
   };
 
   // Process monthly payment
@@ -36,7 +42,8 @@ export function useArminaPool() {
       abi: ArminaPoolABI.abi,
       functionName: 'processMonthlyPayment',
       args: [poolId, month],
-    });
+      ...paymasterOpts,
+    } as any);
   };
 
   // Claim final settlement
@@ -46,7 +53,8 @@ export function useArminaPool() {
       abi: ArminaPoolABI.abi,
       functionName: 'claimFinalSettlement',
       args: [poolId],
-    });
+      ...paymasterOpts,
+    } as any);
   };
 
   return {

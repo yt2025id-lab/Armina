@@ -4,6 +4,7 @@ import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 
 import { ARMINA_REPUTATION_ABI, CONTRACTS } from "@/contracts/abis";
 import { ReputationLevel } from "@/types";
 import { getReputationLevel } from "@/lib/constants";
+import { usePaymasterCapabilities } from "./usePaymaster";
 
 export function useHasReputation(address: `0x${string}` | undefined) {
   return useReadContract({
@@ -71,6 +72,7 @@ export function useCollateralDiscount(address: `0x${string}` | undefined) {
 
 export function useMintReputation() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const capabilities = usePaymasterCapabilities();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -82,7 +84,8 @@ export function useMintReputation() {
       address: CONTRACTS.REPUTATION,
       abi: ARMINA_REPUTATION_ABI,
       functionName: "mint",
-    });
+      ...(capabilities && { capabilities }),
+    } as any);
   };
 
   return {

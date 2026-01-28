@@ -2,6 +2,7 @@
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { IDRX_ABI, CONTRACTS } from "@/contracts/abis";
+import { usePaymasterCapabilities } from "./usePaymaster";
 
 export function useIDRXBalance(address: `0x${string}` | undefined) {
   return useReadContract({
@@ -56,6 +57,7 @@ export function useTimeUntilNextClaim(address: `0x${string}` | undefined) {
 
 export function useClaimFaucet() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const capabilities = usePaymasterCapabilities();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -67,7 +69,8 @@ export function useClaimFaucet() {
       address: CONTRACTS.IDRX,
       abi: IDRX_ABI,
       functionName: "faucet",
-    });
+      ...(capabilities && { capabilities }),
+    } as any);
   };
 
   return {
@@ -82,6 +85,7 @@ export function useClaimFaucet() {
 
 export function useApproveIDRX() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const capabilities = usePaymasterCapabilities();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -94,7 +98,8 @@ export function useApproveIDRX() {
       abi: IDRX_ABI,
       functionName: "approve",
       args: [spender, amount],
-    });
+      ...(capabilities && { capabilities }),
+    } as any);
   };
 
   return {
