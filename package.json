@@ -11,6 +11,7 @@
     "test": "hardhat test",
     "deploy:idrx": "hardhat run scripts/deploy-idrx.ts --network baseSepolia",
     "deploy:pool": "hardhat run scripts/deploy.ts --network baseSepolia",
+    "deploy:reputation": "hardhat run scripts/deploy-reputation.ts --network baseSepolia",
     "deploy:mainnet": "hardhat run scripts/deploy.ts --network base",
     "verify": "hardhat verify --network baseSepolia"
   },
