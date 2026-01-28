@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useOnboarding, useLanguage } from "@/components/providers";
 import { IDRX_ABI, CONTRACTS } from "@/contracts/abis";
 import { ConnectButton } from "@/components/ui/ConnectButton";
+import { useAllPools } from "@/hooks/usePoolData";
 
 export default function HomePage() {
   const { address, isConnected } = useAccount();
@@ -15,6 +16,7 @@ export default function HomePage() {
   const { language, setLanguage, t } = useLanguage();
 
   const displayAddress = address;
+  const { activePools, completedPools, pools } = useAllPools();
 
   // Fetch IDRX balance
   const { data: idrxBalance } = useReadContract({
@@ -155,11 +157,11 @@ export default function HomePage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="p-5 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <p className="text-3xl font-bold text-[#1d2856]">0</p>
+            <p className="text-3xl font-bold text-[#1d2856]">{activePools.length}</p>
             <p className="text-slate-500 text-sm mt-1.5">{t.activePools}</p>
           </div>
           <div className="p-5 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <p className="text-3xl font-bold text-[#1d2856]">0</p>
+            <p className="text-3xl font-bold text-[#1d2856]">{completedPools.length}</p>
             <p className="text-slate-500 text-sm mt-1.5">{t.completed}</p>
           </div>
         </div>
@@ -216,14 +218,32 @@ export default function HomePage() {
                 {t.viewAll}
               </Link>
             </div>
-            <div className="p-5 bg-slate-50 rounded-xl text-center">
-              <p className="text-slate-400 text-sm">{t.noActivePools}</p>
-              <Link href="/pool">
-                <button className="mt-3 text-sm text-[#1d2856] font-semibold hover:underline">
-                  {t.joinPoolNow}
-                </button>
-              </Link>
-            </div>
+            {activePools.length > 0 ? (
+              <div className="space-y-3">
+                {activePools.slice(0, 3).map((pool) => (
+                  <Link key={pool.id.toString()} href={`/pools/${pool.id.toString()}`}>
+                    <div className="p-4 bg-slate-50 rounded-xl flex items-center justify-between hover:bg-slate-100 transition-colors">
+                      <div>
+                        <p className="font-medium text-[#1d2856]">Pool #{pool.id.toString()}</p>
+                        <p className="text-slate-500 text-xs">
+                          {pool.currentParticipants}/{pool.maxParticipants} members · Round {pool.currentRound}/{pool.totalRounds}
+                        </p>
+                      </div>
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">Active</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="p-5 bg-slate-50 rounded-xl text-center">
+                <p className="text-slate-400 text-sm">{t.noActivePools}</p>
+                <Link href="/pool">
+                  <button className="mt-3 text-sm text-[#1d2856] font-semibold hover:underline">
+                    {t.joinPoolNow}
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>
