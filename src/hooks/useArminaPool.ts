@@ -1,71 +1,64 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContracts } from 'wagmi/experimental';
 import { ARMINA_POOL_ADDRESS } from '@/contracts/config';
 import ArminaPoolABI from '@/contracts/abis/ArminaPool.json';
 import { usePaymasterCapabilities } from './usePaymaster';
 
 /**
- * Hook for reading ArminaPool contract data
+ * Hook for writing to ArminaPool contract (with paymaster support)
  */
 export function useArminaPool() {
-  const { writeContractAsync, data: hash, isPending } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
   const capabilities = usePaymasterCapabilities();
 
-  const paymasterOpts = capabilities ? { capabilities } : {};
+  // EIP-5792 for paymaster
+  const { writeContractsAsync, data: batchId, isPending: isPendingBatch } = useWriteContracts();
 
-  // Create a new pool
-  const createPool = async (monthlyAmount: bigint, poolSize: number) => {
-    return writeContractAsync({
-      address: ARMINA_POOL_ADDRESS,
-      abi: ArminaPoolABI.abi,
-      functionName: 'createPool',
-      args: [monthlyAmount, poolSize],
-      ...paymasterOpts,
-    } as any);
+  // Regular fallback
+  const { writeContractAsync, data: hash, isPending: isPendingSingle } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const writePool = async (functionName: string, args: any[]) => {
+    if (capabilities) {
+      return writeContractsAsync({
+        contracts: [{
+          address: ARMINA_POOL_ADDRESS,
+          abi: ArminaPoolABI.abi as any,
+          functionName,
+          args,
+        }],
+        capabilities,
+      } as any);
+    } else {
+      return writeContractAsync({
+        address: ARMINA_POOL_ADDRESS,
+        abi: ArminaPoolABI.abi as any,
+        functionName,
+        args,
+      });
+    }
   };
 
-  // Join an existing pool
-  const joinPool = async (poolId: bigint) => {
-    return writeContractAsync({
-      address: ARMINA_POOL_ADDRESS,
-      abi: ArminaPoolABI.abi,
-      functionName: 'joinPool',
-      args: [poolId],
-      ...paymasterOpts,
-    } as any);
-  };
+  const createPool = (monthlyAmount: bigint, poolSize: number) =>
+    writePool('createPool', [monthlyAmount, poolSize]);
 
-  // Process monthly payment
-  const processPayment = async (poolId: bigint, month: number) => {
-    return writeContractAsync({
-      address: ARMINA_POOL_ADDRESS,
-      abi: ArminaPoolABI.abi,
-      functionName: 'processMonthlyPayment',
-      args: [poolId, month],
-      ...paymasterOpts,
-    } as any);
-  };
+  const joinPool = (poolId: bigint) =>
+    writePool('joinPool', [poolId]);
 
-  // Claim final settlement
-  const claimSettlement = async (poolId: bigint) => {
-    return writeContractAsync({
-      address: ARMINA_POOL_ADDRESS,
-      abi: ArminaPoolABI.abi,
-      functionName: 'claimFinalSettlement',
-      args: [poolId],
-      ...paymasterOpts,
-    } as any);
-  };
+  const processPayment = (poolId: bigint, month: number) =>
+    writePool('processMonthlyPayment', [poolId, month]);
+
+  const claimSettlement = (poolId: bigint) =>
+    writePool('claimFinalSettlement', [poolId]);
 
   return {
     createPool,
     joinPool,
     processPayment,
     claimSettlement,
-    isPending,
+    isPending: isPendingSingle || isPendingBatch,
     isConfirming,
     isSuccess,
-    hash,
+    hash: hash || batchId,
   };
 }
 
@@ -75,7 +68,7 @@ export function useArminaPool() {
 export function usePoolInfo(poolId: bigint) {
   const { data, isLoading, error, refetch } = useReadContract({
     address: ARMINA_POOL_ADDRESS,
-    abi: ArminaPoolABI.abi,
+    abi: ArminaPoolABI.abi as any,
     functionName: 'getPoolInfo',
     args: [poolId],
   });
@@ -94,7 +87,7 @@ export function usePoolInfo(poolId: bigint) {
 export function useParticipantDetails(poolId: bigint, address: `0x${string}`) {
   const { data, isLoading, error, refetch } = useReadContract({
     address: ARMINA_POOL_ADDRESS,
-    abi: ArminaPoolABI.abi,
+    abi: ArminaPoolABI.abi as any,
     functionName: 'getParticipantDetails',
     args: [poolId, address],
   });
@@ -113,7 +106,7 @@ export function useParticipantDetails(poolId: bigint, address: `0x${string}`) {
 export function usePoolCounter() {
   const { data, isLoading, error } = useReadContract({
     address: ARMINA_POOL_ADDRESS,
-    abi: ArminaPoolABI.abi,
+    abi: ArminaPoolABI.abi as any,
     functionName: 'poolCounter',
   });
 

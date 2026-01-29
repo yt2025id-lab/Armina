@@ -1,6 +1,7 @@
 "use client";
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useWriteContracts } from "wagmi/experimental";
 import { IDRX_ABI, CONTRACTS } from "@/contracts/abis";
 import { usePaymasterCapabilities } from "./usePaymaster";
 
@@ -56,58 +57,83 @@ export function useTimeUntilNextClaim(address: `0x${string}` | undefined) {
 }
 
 export function useClaimFaucet() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
   const capabilities = usePaymasterCapabilities();
 
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
+  // Use EIP-5792 writeContracts for paymaster support
+  const { writeContracts, data: id, isPending: isPendingBatch, error: batchError } = useWriteContracts();
+
+  // Fallback to regular writeContract when paymaster not available
+  const { writeContract, data: hash, isPending: isPendingSingle, error: singleError } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const claimFaucet = () => {
     if (!CONTRACTS.IDRX) return;
-    writeContract({
-      address: CONTRACTS.IDRX,
-      abi: IDRX_ABI,
-      functionName: "faucet",
-      ...(capabilities && { capabilities }),
-    } as any);
+
+    if (capabilities) {
+      // Gasless via paymaster (EIP-5792)
+      writeContracts({
+        contracts: [{
+          address: CONTRACTS.IDRX,
+          abi: IDRX_ABI,
+          functionName: "faucet",
+        }],
+        capabilities,
+      } as any);
+    } else {
+      // Regular transaction
+      writeContract({
+        address: CONTRACTS.IDRX,
+        abi: IDRX_ABI,
+        functionName: "faucet",
+      });
+    }
   };
 
   return {
     claimFaucet,
-    hash,
-    isPending,
+    hash: hash || id,
+    isPending: isPendingSingle || isPendingBatch,
     isConfirming,
     isSuccess,
-    error,
+    error: singleError || batchError,
   };
 }
 
 export function useApproveIDRX() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
   const capabilities = usePaymasterCapabilities();
-
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
+  const { writeContracts, data: id, isPending: isPendingBatch, error: batchError } = useWriteContracts();
+  const { writeContract, data: hash, isPending: isPendingSingle, error: singleError } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const approve = (spender: `0x${string}`, amount: bigint) => {
     if (!CONTRACTS.IDRX) return;
-    writeContract({
-      address: CONTRACTS.IDRX,
-      abi: IDRX_ABI,
-      functionName: "approve",
-      args: [spender, amount],
-      ...(capabilities && { capabilities }),
-    } as any);
+
+    if (capabilities) {
+      writeContracts({
+        contracts: [{
+          address: CONTRACTS.IDRX,
+          abi: IDRX_ABI,
+          functionName: "approve",
+          args: [spender, amount],
+        }],
+        capabilities,
+      } as any);
+    } else {
+      writeContract({
+        address: CONTRACTS.IDRX,
+        abi: IDRX_ABI,
+        functionName: "approve",
+        args: [spender, amount],
+      });
+    }
   };
 
   return {
     approve,
-    hash,
-    isPending,
+    hash: hash || id,
+    isPending: isPendingSingle || isPendingBatch,
     isConfirming,
     isSuccess,
-    error,
+    error: singleError || batchError,
   };
 }

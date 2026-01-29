@@ -1,6 +1,7 @@
 "use client";
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useWriteContracts } from "wagmi/experimental";
 import { ARMINA_REPUTATION_ABI, CONTRACTS } from "@/contracts/abis";
 import { ReputationLevel } from "@/types";
 import { getReputationLevel } from "@/lib/constants";
@@ -71,29 +72,38 @@ export function useCollateralDiscount(address: `0x${string}` | undefined) {
 }
 
 export function useMintReputation() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
   const capabilities = usePaymasterCapabilities();
-
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
+  const { writeContracts, data: batchId, isPending: isPendingBatch, error: batchError } = useWriteContracts();
+  const { writeContract, data: hash, isPending: isPendingSingle, error: singleError } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const mint = () => {
     if (!CONTRACTS.REPUTATION) return;
-    writeContract({
-      address: CONTRACTS.REPUTATION,
-      abi: ARMINA_REPUTATION_ABI,
-      functionName: "mint",
-      ...(capabilities && { capabilities }),
-    } as any);
+
+    if (capabilities) {
+      writeContracts({
+        contracts: [{
+          address: CONTRACTS.REPUTATION,
+          abi: ARMINA_REPUTATION_ABI,
+          functionName: "mint",
+        }],
+        capabilities,
+      } as any);
+    } else {
+      writeContract({
+        address: CONTRACTS.REPUTATION,
+        abi: ARMINA_REPUTATION_ABI,
+        functionName: "mint",
+      });
+    }
   };
 
   return {
     mint,
-    hash,
-    isPending,
+    hash: hash || batchId,
+    isPending: isPendingSingle || isPendingBatch,
     isConfirming,
     isSuccess,
-    error,
+    error: singleError || batchError,
   };
 }
