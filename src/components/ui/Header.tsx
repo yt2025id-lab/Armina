@@ -1,6 +1,5 @@
 "use client";
 
-import { useAccount } from "wagmi";
 import { formatUnits } from "viem";
 import { useIDRXBalance } from "@/hooks/useIDRX";
 import { usePathname } from "next/navigation";
@@ -11,11 +10,12 @@ import {
 } from "@coinbase/onchainkit/wallet";
 import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity";
 import { ConnectButton } from "./ConnectButton";
+import { useAuth } from "@/hooks/useAuth";
 
 export function Header() {
   const pathname = usePathname();
   const isHomePage = pathname === "/";
-  const { address, isConnected } = useAccount();
+  const { address, isConnected: isUserConnected } = useAuth();
   const { data: balance, isLoading } = useIDRXBalance(address);
 
   const formatBalance = (bal: bigint | undefined) => {
@@ -35,7 +35,7 @@ export function Header() {
       <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {/* IDRX Balance */}
-          {isConnected && address && (
+          {isUserConnected && address && (
             <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg">
               <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
@@ -52,7 +52,7 @@ export function Header() {
         {/* Hide connect wallet on homepage - it has its own connect button */}
         {!isHomePage && (
           <div className="flex items-center gap-3">
-            {isConnected && address ? (
+            {isUserConnected && address ? (
               <Wallet>
                 <WalletDropdown>
                   <Identity address={address} schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9">

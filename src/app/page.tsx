@@ -1,6 +1,6 @@
 "use client";
 
-import { useAccount, useReadContract, useDisconnect } from "wagmi";
+import { useReadContract } from "wagmi";
 import Link from "next/link";
 import { formatAddress } from "@/lib/constants";
 import Image from "next/image";
@@ -8,10 +8,10 @@ import { useOnboarding, useLanguage } from "@/components/providers";
 import { IDRX_ABI, CONTRACTS } from "@/contracts/abis";
 import { ConnectButton } from "@/components/ui/ConnectButton";
 import { useAllPools } from "@/hooks/usePoolData";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function HomePage() {
-  const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
+  const { address, isConnected: isUserConnected, disconnect } = useAuth();
   const { showOnboarding } = useOnboarding();
   const { language, setLanguage, t } = useLanguage();
 
@@ -81,7 +81,7 @@ export default function HomePage() {
 
         {/* Wallet Section */}
         <div className="flex flex-col items-center space-y-4">
-          {!isConnected ? (
+          {!isUserConnected ? (
             <>
               <ConnectButton>
                 {t.connectWallet}
@@ -210,7 +210,7 @@ export default function HomePage() {
         </Link>
 
         {/* Active Pool Preview */}
-        {isConnected && (
+        {isUserConnected && (
           <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
             <div className="flex items-center justify-between mb-4">
               <p className="font-semibold text-[#1d2856] text-lg">{t.yourActivePools}</p>

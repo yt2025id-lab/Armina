@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
+import { useAuth } from "@/hooks/useAuth";
 import { StatsSkeleton } from "@/components/ui/LoadingSkeleton";
 import { useAllPools, useParticipantInfo, usePaymentHistory, useProjectedPayout } from "@/hooks/usePoolData";
 import { useArminaPool } from "@/hooks/useArminaPool";
@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useAuth();
   const { pools, isLoading: isLoadingPools } = useAllPools();
   const { processPayment, isPending: isPaymentPending } = useArminaPool();
 

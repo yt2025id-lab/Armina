@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useAccount } from "wagmi";
+import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/components/providers";
 import { useAllPools, useParticipantInfo } from "@/hooks/usePoolData";
 import { useYieldData, getProtocolDisplayName, getProtocolColor } from "@/hooks/useYieldData";
@@ -21,7 +21,7 @@ const formatTVL = (tvl: number) => {
 };
 
 export default function OptimizerPage() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useAuth();
   const { t } = useLanguage();
 
   // Live yield data from DeFiLlama via AI agent API

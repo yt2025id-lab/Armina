@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import { useAccount, useDisconnect } from "wagmi";
 import { ConnectWallet, Wallet } from "@coinbase/onchainkit/wallet";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ConnectButtonProps {
   className?: string;
@@ -13,12 +13,11 @@ interface ConnectButtonProps {
 
 export function ConnectButton({ className, variant = "primary", children }: ConnectButtonProps) {
   const [showOptions, setShowOptions] = useState(false);
-  const { login, authenticated, ready } = usePrivy();
-  const { isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
+  const { login } = usePrivy();
+  const { isConnected } = useAuth();
 
   // If already connected via Privy or wagmi, don't show connect options
-  if (authenticated || isConnected) {
+  if (isConnected) {
     return null;
   }
 

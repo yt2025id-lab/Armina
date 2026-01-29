@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 import { Pool, PoolTier } from "@/types";
 import { POOL_TIERS, calculateCollateral, formatIDRX } from "@/lib/constants";
@@ -15,11 +14,12 @@ import { useApproveIDRX } from "@/hooks/useIDRX";
 import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
 import { parseUnits } from "viem";
 import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 type TabType = "open" | "active" | "completed";
 
 export default function PoolPage() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useAuth();
   const router = useRouter();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>("open");

@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
+import { useAuth } from "@/hooks/useAuth";
 import { usePoolDetails, useParticipantInfo } from "@/hooks/usePoolData";
 import { useArminaPool } from "@/hooks/useArminaPool";
 import { useApproveIDRX } from "@/hooks/useIDRX";
@@ -18,7 +18,7 @@ export default function PoolDetailsPage({
   const { id } = use(params);
   const poolId = BigInt(id);
   const router = useRouter();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useAuth();
 
   // Real contract data
   const { data: pool, raw: rawPool, isLoading: isPoolLoading } = usePoolDetails(poolId);

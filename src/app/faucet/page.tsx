@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
+import { useAuth } from "@/hooks/useAuth";
 import { formatUnits } from "viem";
 import toast from "react-hot-toast";
 import { useClaimFaucet, useIDRXBalance } from "@/hooks/useIDRX";
@@ -10,7 +10,7 @@ import { useLanguage } from "@/components/providers";
 
 export default function FaucetPage() {
   const router = useRouter();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useAuth();
   const { claimFaucet, isPending, isConfirming, isSuccess } = useClaimFaucet();
   const { data: balance, refetch } = useIDRXBalance(address);
   const [lastClaimed, setLastClaimed] = useState<Date | null>(null);

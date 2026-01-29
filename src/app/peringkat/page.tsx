@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useAuth } from "@/hooks/useAuth";
 import { ReputationLevel } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { REPUTATION_LEVELS } from "@/lib/constants";
@@ -24,7 +24,7 @@ const LEVEL_LABELS: Record<ReputationLevel, string> = {
 };
 
 export default function PeringkatPage() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useAuth();
   const [activeTab, setActiveTab] = useState<"leaderboard" | "score">("leaderboard");
 
   // Real reputation data

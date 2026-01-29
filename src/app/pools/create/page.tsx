@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
+import { useAuth } from "@/hooks/useAuth";
 import { parseUnits } from "viem";
 import toast from "react-hot-toast";
 import { useArminaPool } from "@/hooks/useArminaPool";
@@ -28,7 +28,7 @@ const COMMON_AMOUNTS = [
 
 export default function CreatePoolPage() {
   const router = useRouter();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useAuth();
   const { createPool, isPending, isConfirming, isSuccess } = useArminaPool();
   const { approve, isPending: isApproving, isSuccess: approveSuccess } = useApproveIDRX();
   const { data: balance } = useIDRXBalance(address);

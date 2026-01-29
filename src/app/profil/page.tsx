@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAccount, useBalance } from "wagmi";
+import { useBalance } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
+import { useAuth } from "@/hooks/useAuth";
 import { formatUnits } from "viem";
 import { Button } from "@/components/ui/Button";
 import { formatAddress, formatIDRX } from "@/lib/constants";
@@ -29,7 +30,7 @@ const LEVEL_LABELS: Record<ReputationLevel, string> = {
 };
 
 export default function ProfilPage() {
-  const { address, isConnected } = useAccount();
+  const { address } = useAuth();
   const { showOnboarding } = useOnboarding();
   const { t } = useLanguage();
 
