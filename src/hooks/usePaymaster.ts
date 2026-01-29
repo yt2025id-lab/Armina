@@ -17,8 +17,12 @@ const PAYMASTER_URL = process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY
 export function usePaymasterCapabilities() {
   const { connector } = useAccount();
 
-  // Only works with Coinbase Smart Wallet
-  const isCoinbaseWallet = connector?.id === "coinbaseWalletSDK";
+  // Works with Coinbase Smart Wallet (various connector IDs)
+  const isCoinbaseWallet =
+    connector?.id === "coinbaseWalletSDK" ||
+    connector?.id === "com.coinbase.wallet" ||
+    connector?.id === "coinbaseWallet" ||
+    connector?.name?.toLowerCase().includes("coinbase");
 
   if (!PAYMASTER_URL || !isCoinbaseWallet) {
     return undefined;
