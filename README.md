@@ -35,7 +35,7 @@ Armina brings Indonesia's traditional rotating savings system (arisan) on-chain.
 
 | Contract | Address |
 |----------|---------|
-| IDRX Token | `0x7F197979D4046b2264De80D11359B6Cb5d1a8611` |
+| IDRX Token | `0x3D6DF6F2cA9e988dd454a538c08cdc82cE3fD7da` |
 | ArminaPool | `0xDdBFEBA307151a1991b68D31D9e6041852302fB7` |
 | ArminaReputation (Soulbound NFT) | `0xb4D23587F855C54E558d1a3d630Be53bdAEe16de` |
 
@@ -97,7 +97,7 @@ SUBSCRIPTION_ID=123 npx hardhat run scripts/setup-vrf.ts --network baseSepolia
 contracts/                # Solidity smart contracts
   ArminaPool.sol          # Main pool contract (multi-pool, collateral, VRF)
   ArminaReputation.sol    # Soulbound reputation NFT (score, levels, discounts)
-  IDRX.sol                # Mock IDRX ERC20 token with faucet
+  IDRX.sol                # Mock IDRX ERC20 token (500K faucet, 5hr cooldown)
 scripts/                  # Deployment & setup scripts
 test/                     # Hardhat tests (46 tests)
 src/

@@ -56,7 +56,7 @@ export default function ProfilPage() {
 
   useEffect(() => {
     if (claimSuccess) {
-      toast.success("Claimed 10,000 IDRX!");
+      toast.success("Claimed 500,000 IDRX!");
     }
   }, [claimSuccess]);
 
