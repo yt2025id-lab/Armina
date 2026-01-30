@@ -8,7 +8,7 @@ import { useYieldData, getProtocolDisplayName, getProtocolColor } from "@/hooks/
 import { formatUnits } from "viem";
 
 const formatIDRXFromBigInt = (amount: bigint) => {
-  const val = Number(formatUnits(amount, 18));
+  const val = Number(formatUnits(amount, 2));
   if (val === 0) return "0";
   return new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(val);
 };
@@ -59,7 +59,7 @@ export default function OptimizerPage() {
     const collateral = participant?.collateralDeposited || BigInt(0);
     const earned = participant?.collateralYieldEarned || BigInt(0);
     const monthlyRate = bestApy / 100 / 12;
-    const collateralNum = Number(formatUnits(collateral as bigint, 18));
+    const collateralNum = Number(formatUnits(collateral as bigint, 2));
     const monthlyYield = collateralNum * monthlyRate;
 
     return {

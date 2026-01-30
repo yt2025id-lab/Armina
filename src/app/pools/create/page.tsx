@@ -55,7 +55,7 @@ export default function CreatePoolPage() {
 
     try {
       // Step 1: Approve IDRX spending
-      const approvalAmount = parseUnits(totalDueAtJoin.toString(), 18);
+      const approvalAmount = parseUnits(totalDueAtJoin.toString(), 2);
 
       toast.loading("Approving IDRX...", { id: "approve" });
       approve(ARMINA_POOL_ADDRESS, approvalAmount);
@@ -76,7 +76,7 @@ export default function CreatePoolPage() {
           toast.success("Approval confirmed!", { id: "approve" });
           toast.loading("Creating pool...", { id: "create" });
 
-          const monthlyAmountWei = parseUnits(finalAmount.toString(), 18);
+          const monthlyAmountWei = parseUnits(finalAmount.toString(), 2);
           await createPool(monthlyAmountWei, poolSize);
         } catch (error) {
           console.error("Error creating pool:", error);

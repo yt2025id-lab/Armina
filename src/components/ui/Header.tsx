@@ -20,7 +20,7 @@ export function Header() {
 
   const formatBalance = (bal: bigint | undefined) => {
     if (!bal) return "0";
-    const value = Number(formatUnits(bal, 18));
+    const value = Number(formatUnits(bal, 2));
     if (value >= 1000000) {
       return `${(value / 1000000).toFixed(1)}M`;
     }
