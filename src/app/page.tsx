@@ -29,11 +29,8 @@ export default function HomePage() {
     },
   });
 
-  // IDRX uses 2 decimals, so divide by 10^2 = 100
-  // But the raw value from contract is in wei (18 decimals for standard ERC20)
-  // IDRX specifically uses 2 decimals, so we need to check the actual decimal
   const formattedBalance = idrxBalance
-    ? (Number(idrxBalance) / 1e18).toLocaleString("id-ID", { maximumFractionDigits: 0 })
+    ? (Number(idrxBalance) / 1e2).toLocaleString("id-ID", { maximumFractionDigits: 0 })
     : "0";
 
   return (
