@@ -43,7 +43,7 @@ export default function FaucetPage() {
   const formatBalance = (bal: bigint | undefined) => {
     if (!bal) return "0";
     return new Intl.NumberFormat("id-ID").format(
-      Math.floor(Number(formatUnits(bal, 18)))
+      Math.floor(Number(formatUnits(bal, 2)))
     );
   };
 
@@ -83,7 +83,7 @@ export default function FaucetPage() {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between items-center">
               <span className="text-slate-600">{t.amountPerClaim}</span>
-              <span className="font-semibold text-[#1e2a4a]">10,000 IDRX</span>
+              <span className="font-semibold text-[#1e2a4a]">500,000 IDRX</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-600">{t.network}</span>
@@ -94,7 +94,7 @@ export default function FaucetPage() {
             <div className="flex justify-between items-center">
               <span className="text-slate-600">{t.rateLimit}</span>
               <span className="font-semibold text-[#1e2a4a]">
-                {t.unlimited}
+                1x per hari
               </span>
             </div>
           </div>
@@ -104,7 +104,7 @@ export default function FaucetPage() {
         {lastClaimed && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
             <p className="text-sm text-green-800">
-              ✓ Successfully claimed 10,000 IDRX at{" "}
+              ✓ Successfully claimed 500,000 IDRX at{" "}
               {lastClaimed.toLocaleTimeString()}
             </p>
           </div>
