@@ -35,8 +35,9 @@ Armina brings Indonesia's traditional rotating savings system (arisan) on-chain.
 
 | Contract | Address |
 |----------|---------|
-| IDRX Token | `0x3D6DF6F2cA9e988dd454a538c08cdc82cE3fD7da` |
-| ArminaPool | `0xDdBFEBA307151a1991b68D31D9e6041852302fB7` |
+| IDRX Token | `0x7F197979D4046b2264De80D11359B6Cb5d1a8611` |
+| ArminaPool | `0x5DD351Aa364b3E77650daF9eF29EC907eECA30AC` |
+| ArminaYieldOptimizer | `0xA29B86204f0Dd052922C6417bceECd7554e5BC9a` |
 | ArminaReputation (Soulbound NFT) | `0xb4D23587F855C54E558d1a3d630Be53bdAEe16de` |
 
 ## Getting Started
@@ -72,10 +73,13 @@ Open http://localhost:3000
 # Compile contracts
 npm run compile
 
-# Run tests (46 tests)
+# Run tests (72 tests)
 npm test
 
-# Deploy to Base Sepolia
+# Deploy all contracts to Base Sepolia (ArminaPool + YieldOptimizer)
+npx hardhat run scripts/deploy-all.ts --network baseSepolia
+
+# Deploy individually
 npm run deploy:idrx
 npm run deploy:pool
 npm run deploy:reputation
@@ -95,11 +99,12 @@ SUBSCRIPTION_ID=123 npx hardhat run scripts/setup-vrf.ts --network baseSepolia
 
 ```
 contracts/                # Solidity smart contracts
-  ArminaPool.sol          # Main pool contract (multi-pool, collateral, VRF)
+  ArminaPool.sol          # Main pool contract (collateral, VRF, yield optimizer, reputation)
+  ArminaYieldOptimizer.sol# AI yield optimizer (multi-protocol DeFi deployment)
   ArminaReputation.sol    # Soulbound reputation NFT (score, levels, discounts)
   IDRX.sol                # Mock IDRX ERC20 token (500K faucet, 5hr cooldown)
 scripts/                  # Deployment & setup scripts
-test/                     # Hardhat tests (46 tests)
+test/                     # Hardhat tests (72 tests)
 src/
   app/                    # Next.js pages
     page.tsx              # Home — wallet, balance, pool stats
@@ -125,14 +130,22 @@ src/
 
 ## AI Yield Optimizer
 
-The optimizer fetches live APY data from DeFiLlama for Base chain stablecoin pools, ranks them using a risk-adjusted scoring algorithm, and recommends the best protocol for collateral deployment.
+The ArminaYieldOptimizer smart contract deploys idle collateral to the highest-yielding DeFi protocol on Base. An off-chain AI agent monitors APYs via DeFiLlama and calls `rebalance()` to move funds when a better opportunity is found.
 
-**Powered by:**
-- Coinbase AgentKit (`@coinbase/agentkit`)
-- DeFiLlama yields API (free, no key required)
-- Risk scoring: TVL, protocol reputation, APY sustainability
+**On-chain (ArminaYieldOptimizer.sol):**
+- Collateral auto-deployed to best protocol when pool starts
+- AI agent triggers rebalance across protocols
+- Yield harvested and distributed proportionally to pool participants
+- Emergency withdrawal by owner
+
+**Off-chain AI agent:**
+- DeFiLlama yields API for live APY data (free, no key required)
+- Risk-adjusted scoring: TVL, protocol reputation, APY sustainability
+- Coinbase AgentKit (`@coinbase/agentkit`) for on-chain execution
 
 **Supported protocols:** Moonwell, Aave V3, Compound V3, Morpho, Seamless
+
+**Default APYs (basis points):** Morpho 1400 (14%), Moonwell 1250 (12.5%), Seamless 1200 (12%), Aave 1100 (11%), Compound 1050 (10.5%)
 
 ## Soulbound Reputation NFT
 
@@ -172,9 +185,10 @@ All transactions are sponsored via Coinbase Paymaster — users never need ETH f
 npm test
 ```
 
-46 tests covering:
-- **ArminaPool (21 tests):** IDRX token, pool creation, joining, payments, settlement
-- **ArminaReputation (25 tests):** minting, soulbound transfers, pool authorization, score recording, levels & discounts
+72 tests covering:
+- **ArminaPool (47 tests):** IDRX token, pool creation, joining, payments, settlement, yield optimizer integration, VRF integration, reputation integration
+- **ArminaYieldOptimizer (6 tests):** deployment, best APY selection, pool authorization, APY updates, deposits
+- **ArminaReputation (19 tests):** minting, soulbound transfers, pool authorization, score recording, levels & discounts
 
 ## Environment Variables
 
@@ -182,6 +196,7 @@ See [.env.example](.env.example) for all required variables:
 - `PRIVATE_KEY` — Deployer wallet
 - `NEXT_PUBLIC_ARMINA_POOL_ADDRESS` — ArminaPool contract
 - `NEXT_PUBLIC_IDRX_ADDRESS` — IDRX token contract
+- `NEXT_PUBLIC_YIELD_OPTIMIZER_ADDRESS` — ArminaYieldOptimizer contract
 - `NEXT_PUBLIC_REPUTATION_ADDRESS` — Reputation NFT contract
 - `NEXT_PUBLIC_ONCHAINKIT_API_KEY` — Coinbase Developer Platform (Paymaster)
 - `NEXT_PUBLIC_PRIVY_APP_ID` — Privy authentication
