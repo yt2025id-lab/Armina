@@ -35,10 +35,10 @@ Armina brings Indonesia's traditional rotating savings system (arisan) on-chain.
 
 | Contract | Address |
 |----------|---------|
-| IDRX Token | `0x7F197979D4046b2264De80D11359B6Cb5d1a8611` |
-| ArminaPool | `0x5DD351Aa364b3E77650daF9eF29EC907eECA30AC` |
-| ArminaYieldOptimizer | `0xA29B86204f0Dd052922C6417bceECd7554e5BC9a` |
-| ArminaReputation (Soulbound NFT) | `0xb4D23587F855C54E558d1a3d630Be53bdAEe16de` |
+| IDRX Token | [`0xd7712a13AB95Ab7F3AfeB3eEc4125dE18D219eeD`](https://sepolia.basescan.org/address/0xd7712a13AB95Ab7F3AfeB3eEc4125dE18D219eeD#code) |
+| ArminaPool | [`0xD978524c46903E68F0C8CD171422Ae1658555975`](https://sepolia.basescan.org/address/0xD978524c46903E68F0C8CD171422Ae1658555975#code) |
+| ArminaYieldOptimizer | [`0x466E3662c5de88bd93300491187caDF8949ee61c`](https://sepolia.basescan.org/address/0x466E3662c5de88bd93300491187caDF8949ee61c#code) |
+| ArminaReputation (Soulbound NFT) | [`0x6a7ff47bA8633F252d28F9D6F080fd8cf50ddF6B`](https://sepolia.basescan.org/address/0x6a7ff47bA8633F252d28F9D6F080fd8cf50ddF6B#code) |
 
 ## Getting Started
 
@@ -102,7 +102,7 @@ contracts/                # Solidity smart contracts
   ArminaPool.sol          # Main pool contract (collateral, VRF, yield optimizer, reputation)
   ArminaYieldOptimizer.sol# AI yield optimizer (multi-protocol DeFi deployment)
   ArminaReputation.sol    # Soulbound reputation NFT (score, levels, discounts)
-  IDRX.sol                # Mock IDRX ERC20 token (500K faucet, 5hr cooldown)
+  IDRX.sol                # Mock IDRX ERC20 token (500K faucet, unlimited claims)
 scripts/                  # Deployment & setup scripts
 test/                     # Hardhat tests (73 tests)
 src/

@@ -93,8 +93,8 @@ export default function FaucetPage() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-600">{t.rateLimit}</span>
-              <span className="font-semibold text-[#1e2a4a]">
-                5x per hari
+              <span className="font-semibold text-green-600">
+                Unlimited (Testnet)
               </span>
             </div>
           </div>

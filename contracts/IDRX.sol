@@ -15,7 +15,7 @@ contract IDRX is ERC20, Ownable {
     // Faucet cooldown mapping
     mapping(address => uint256) public lastFaucetClaim;
     uint256 public constant FAUCET_AMOUNT = 500_000 * 10 ** DECIMALS; // 500K IDRX
-    uint256 public constant FAUCET_COOLDOWN = 5 hours;
+    uint256 public constant FAUCET_COOLDOWN = 0; // No cooldown for testnet judging
 
     event FaucetClaimed(address indexed user, uint256 amount);
 
