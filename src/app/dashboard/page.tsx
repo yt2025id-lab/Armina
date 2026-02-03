@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { StatsSkeleton } from "@/components/ui/LoadingSkeleton";
 import { useAllPools, useParticipantInfo, usePaymentHistory, useProjectedPayout } from "@/hooks/usePoolData";
 import { useArminaPool } from "@/hooks/useArminaPool";
+import { useCurrentAPY } from "@/hooks/useYieldOptimizer";
 import { formatIDRX } from "@/lib/constants";
 import toast from "react-hot-toast";
 
@@ -13,7 +14,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const { address, isConnected } = useAuth();
   const { pools, isLoading: isLoadingPools } = useAllPools();
-  const { processPayment, isPending: isPaymentPending } = useArminaPool();
+  const { processPayment, requestWinnerDraw, isPending: isPaymentPending } = useArminaPool();
+  const { apyPercent: liveAPY } = useCurrentAPY();
 
   // Find first active pool the user might be in (we show all active pools)
   const activePools = pools.filter((p) => p.isActive && !p.isCompleted);
@@ -43,6 +45,18 @@ export default function DashboardPage() {
     } catch (error) {
       console.error(error);
       toast.error("Payment failed", { id: "payment" });
+    }
+  };
+
+  const handleDrawWinner = async () => {
+    if (!selectedPool) return;
+    try {
+      toast.loading("Requesting VRF randomness...", { id: "vrf" });
+      await requestWinnerDraw(selectedPool.id);
+      toast.success("Winner draw requested!", { id: "vrf" });
+    } catch (error) {
+      console.error(error);
+      toast.error("Draw failed — only pool creator or owner can draw", { id: "vrf" });
     }
   };
 
@@ -91,7 +105,10 @@ export default function DashboardPage() {
               <p className="text-2xl font-bold text-green-600">
                 +{formatIDRX(participant.collateralYieldEarned)}
               </p>
-              <p className="text-xs text-slate-400">IDRX</p>
+              <div className="flex items-center gap-1 mt-1">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                <p className="text-xs text-green-600 font-medium">{liveAPY.toFixed(1)}% APY</p>
+              </div>
             </div>
           </div>
         ) : (
@@ -157,6 +174,33 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* VRF Draw Winner */}
+        {selectedPool && participant && (
+          <div className="mb-6 p-5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-bold text-purple-900">Chainlink VRF Winner Draw</h3>
+                <p className="text-xs text-purple-600">
+                  Round {selectedPool.currentRound} of {selectedPool.totalRounds}
+                </p>
+              </div>
+              <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                VRF V2.5
+              </span>
+            </div>
+            <button
+              onClick={handleDrawWinner}
+              disabled={isPaymentPending}
+              className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50"
+            >
+              {isPaymentPending ? "Requesting..." : "Draw Winner for This Round"}
+            </button>
+            <p className="text-xs text-purple-500 text-center mt-2">
+              Only pool creator or contract owner can trigger the draw
+            </p>
           </div>
         )}
 

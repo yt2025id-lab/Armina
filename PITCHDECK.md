@@ -35,9 +35,11 @@ Built on Base • Coinbase Smart Wallet • privy • OnchainKit
 On-chain rotating savings with enforced collateral and AI-powered yield.
 
 - **125% Collateral** — Enforced commitment, eliminates default risk
-- **AI Yield Optimizer** — Idle capital earns ~12.5% APY via DeFi
+- **AI Yield Optimizer** — On-chain contract deploys collateral to highest-yield DeFi (up to 14% APY)
+- **Chainlink VRF V2.5** — Provably fair winner selection each round
+- **Soulbound Reputation NFT** — On-chain credit score with collateral discounts (up to 25%)
 - **IDRX Stablecoin** — IDR-pegged token for familiar value
-- **Built on Base** — Low fees, fast transactions, Coinbase ecosystem
+- **Built on Base** — Low fees, gasless via Coinbase Paymaster
 
 ---
 
@@ -48,7 +50,7 @@ On-chain rotating savings with enforced collateral and AI-powered yield.
 1. **Choose Pool** — Select size, contribution amount, duration
 2. **Lock Collateral** — Deposit 125% as commitment + yield capital
 3. **Monthly Contributions** — Auto-invested by AI Yield Optimizer
-4. **Winner Selection** — On-chain randomness each round
+4. **Winner Selection** — Chainlink VRF V2.5 provably fair randomness
 5. **Finish & Return** — Get collateral back + accumulated yield
 
 **Penalty:** 10% deducted per missed payment. Chronic defaulters get liquidated.
@@ -70,6 +72,8 @@ On-chain rotating savings with enforced collateral and AI-powered yield.
 - 100% covers total obligation
 - 25% buffer for penalties + yield farming capital
 
+**Reputation Discount:** Silver 10%, Gold 20%, Diamond 25% off collateral
+
 ---
 
 ## Slide 6: Tech Stack
@@ -82,9 +86,11 @@ On-chain rotating savings with enforced collateral and AI-powered yield.
 
 **Smart Contracts (Base Sepolia):**
 - IDRX Token: `0x7F19...8611`
-- ArminaPool: `0xDdBF...02fB7`
+- ArminaPool: `0x5DD3...30AC`
+- ArminaYieldOptimizer: `0xA29B...BC9a`
+- ArminaReputation (Soulbound): `0xb4D2...16de`
 
-**Integrations:** OnchainKit, Farcaster MiniKit, AI Yield Optimizer
+**Integrations:** OnchainKit, Farcaster MiniKit, Chainlink VRF V2.5, DeFiLlama API, Coinbase Paymaster
 
 ---
 
@@ -119,11 +125,11 @@ On-chain rotating savings with enforced collateral and AI-powered yield.
 
 # 2026 Milestones
 
-**Q1 (Now):** Smart contracts, testnet, 125% collateral, Privy integration
+**Q1 (Now):** 4 smart contracts deployed, Chainlink VRF, AI Yield Optimizer, Reputation NFT, 72 tests passing
 
-**Q2:** Base mainnet, VRF winner selection, security audit
+**Q2:** Base mainnet, security audit, real protocol integrations (Moonwell, Aave, Morpho)
 
-**Q3:** Mobile PWA, Farcaster Frame, multi-protocol yield
+**Q3:** Mobile PWA, Farcaster Frame, multi-chain expansion
 
 **Q4:** Governance token, DAO, 10K users target
 

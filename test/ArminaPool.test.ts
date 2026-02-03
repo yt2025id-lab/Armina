@@ -684,4 +684,91 @@ describe("ArminaPool", function () {
       ).to.be.revertedWithCustomError(optimizer, "NotAuthorized");
     });
   });
+
+  // ============ Full Pool Lifecycle E2E Test ============
+
+  describe("Full Pool Lifecycle", function () {
+    it("should complete a full pool lifecycle: create -> join -> pay -> verify", async function () {
+      const { pool, idrx, optimizer, reputation, owner, user1, user2, user3, user4, user5 } = await loadFixture(deployFixture);
+      const poolAddr = await pool.getAddress();
+      const optimizerAddr = await optimizer.getAddress();
+
+      // Setup optimizer & reputation
+      await pool.setYieldOptimizer(optimizerAddr);
+      await optimizer.authorizePool(poolAddr);
+      await pool.setReputationContract(await reputation.getAddress());
+      await reputation.authorizePool(poolAddr);
+      await reputation.authorizePool(owner.address);
+
+      // Mint reputation NFTs for users
+      for (const user of [user1, user2, user3, user4, user5]) {
+        await reputation.connect(user).mint();
+      }
+
+      // Step 1: Create pool (5 members, 100K IDRX monthly)
+      const monthlyAmount = ethers.parseUnits("100000", 2);
+      await pool.createPool(monthlyAmount, 5);
+
+      const poolDetails = await pool.getPoolDetails(1);
+      expect(poolDetails[1]).to.equal(monthlyAmount);
+      expect(poolDetails[2]).to.equal(5);
+      expect(poolDetails[5]).to.equal(0); // PoolStatus.Open
+
+      // Step 2: All 5 users join (pool auto-starts)
+      const collateral = (monthlyAmount * 5n * 125n) / 100n;
+      const totalRequired = collateral + monthlyAmount;
+
+      const users = [user1, user2, user3, user4, user5];
+      for (const user of users) {
+        await idrx.connect(user).approve(poolAddr, totalRequired);
+        await pool.connect(user).joinPool(1);
+      }
+
+      // Verify pool is now active
+      const activeDetails = await pool.getPoolDetails(1);
+      expect(activeDetails[5]).to.equal(2); // PoolStatus.Active
+      expect(activeDetails[4]).to.equal(5); // 5 participants
+      expect(activeDetails[7]).to.equal(1); // currentMonth = 1
+
+      // Verify collateral was deployed to optimizer
+      const yieldStatus = await optimizer.getPoolYieldStatus(poolAddr);
+      expect(yieldStatus[0]).to.be.gt(0); // totalDeposit > 0
+
+      // Step 3: All users pay month 2
+      for (const user of users) {
+        await idrx.connect(user).approve(poolAddr, monthlyAmount);
+        await pool.connect(user).processMonthlyPayment(1, 2);
+      }
+
+      // Step 4: All users pay month 3
+      for (const user of users) {
+        await idrx.connect(user).approve(poolAddr, monthlyAmount);
+        await pool.connect(user).processMonthlyPayment(1, 3);
+      }
+
+      // Step 5: Verify payment history for user1
+      const history = await pool.getPaymentHistory(1, user1.address);
+      expect(history.length).to.equal(3); // Month 1 (join), 2, 3
+      expect(history[0].month).to.equal(1);
+      expect(history[1].month).to.equal(2);
+      expect(history[2].month).to.equal(3);
+
+      // Step 6: Verify participant details
+      const participant = await pool.getParticipantDetails(1, user1.address);
+      expect(participant[0]).to.equal(collateral); // collateralDeposited
+      expect(participant[3]).to.equal(0); // 0 missed payments
+
+      // Step 7: Verify on-chain APY from optimizer
+      const currentAPY = await pool.getCurrentAPY();
+      expect(currentAPY).to.equal(1400); // Morpho 14% (highest default)
+
+      // Step 8: Verify projected payout exists
+      const projected = await pool.calculateProjectedPayout(1, user1.address);
+      expect(projected).to.be.gt(0);
+
+      // Step 9: Verify reputation was recorded (pool joined)
+      const repData = await reputation.getReputation(user1.address);
+      expect(repData[2]).to.equal(1); // poolsJoined = 1
+    });
+  });
 });

@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/components/providers";
 import { useAllPools, useParticipantInfo } from "@/hooks/usePoolData";
 import { useYieldData, getProtocolDisplayName, getProtocolColor } from "@/hooks/useYieldData";
+import { useBestProtocol, useTotalDeposited, useTotalYieldGenerated, useProtocolInfo } from "@/hooks/useYieldOptimizer";
+import { YIELD_OPTIMIZER_ADDRESS } from "@/contracts/config";
 import { formatUnits } from "viem";
 
 const formatIDRXFromBigInt = (amount: bigint) => {
@@ -23,6 +25,24 @@ const formatTVL = (tvl: number) => {
 export default function OptimizerPage() {
   const { address, isConnected } = useAuth();
   const { t } = useLanguage();
+
+  // On-chain YieldOptimizer contract data
+  const { protocolName: bestOnChainProtocol, apyPercent: onChainAPY } = useBestProtocol();
+  const { totalDeposited: onChainDeposited } = useTotalDeposited();
+  const { totalYieldGenerated: onChainYield } = useTotalYieldGenerated();
+  const moonwell = useProtocolInfo(1);
+  const aave = useProtocolInfo(2);
+  const compound = useProtocolInfo(3);
+  const morpho = useProtocolInfo(4);
+  const seamless = useProtocolInfo(5);
+
+  const onChainProtocols = [
+    { name: "Moonwell", apy: moonwell.currentAPY / 100, deposited: moonwell.deposited, active: moonwell.isActive },
+    { name: "Aave V3", apy: aave.currentAPY / 100, deposited: aave.deposited, active: aave.isActive },
+    { name: "Compound V3", apy: compound.currentAPY / 100, deposited: compound.deposited, active: compound.isActive },
+    { name: "Morpho", apy: morpho.currentAPY / 100, deposited: morpho.deposited, active: morpho.isActive },
+    { name: "Seamless", apy: seamless.currentAPY / 100, deposited: seamless.deposited, active: seamless.isActive },
+  ].sort((a, b) => b.apy - a.apy);
 
   // Live yield data from DeFiLlama via AI agent API
   const {
@@ -145,6 +165,68 @@ export default function OptimizerPage() {
 
       {/* Content */}
       <div className="px-5 py-6 space-y-6 -mt-4 bg-white rounded-t-3xl">
+        {/* On-Chain Contract Data */}
+        <div className="p-5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white text-sm font-bold">SC</span>
+              </div>
+              <div>
+                <p className="font-semibold text-purple-900 text-sm">On-Chain Optimizer</p>
+                <p className="text-xs text-purple-600">ArminaYieldOptimizer Contract</p>
+              </div>
+            </div>
+            {YIELD_OPTIMIZER_ADDRESS && (
+              <a
+                href={`https://sepolia.basescan.org/address/${YIELD_OPTIMIZER_ADDRESS}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-purple-600 hover:text-purple-800 font-mono"
+              >
+                {YIELD_OPTIMIZER_ADDRESS?.slice(0, 6)}...{YIELD_OPTIMIZER_ADDRESS?.slice(-4)}
+              </a>
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="p-3 bg-white rounded-xl text-center">
+              <p className="text-xs text-slate-500">Best Protocol</p>
+              <p className="font-bold text-purple-900">{bestOnChainProtocol}</p>
+            </div>
+            <div className="p-3 bg-white rounded-xl text-center">
+              <p className="text-xs text-slate-500">On-Chain APY</p>
+              <p className="font-bold text-green-600">{onChainAPY.toFixed(1)}%</p>
+            </div>
+            <div className="p-3 bg-white rounded-xl text-center">
+              <p className="text-xs text-slate-500">Total Deposited</p>
+              <p className="font-bold text-purple-900">{formatIDRXFromBigInt(onChainDeposited)}</p>
+            </div>
+          </div>
+
+          {/* Protocol Allocation Table */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-purple-800 mb-2">Protocol Allocation</p>
+            {onChainProtocols.map((p) => (
+              <div key={p.name} className="flex items-center justify-between p-2 bg-white rounded-lg text-sm">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${p.active ? "bg-green-500" : "bg-slate-300"}`} />
+                  <span className="font-medium text-slate-700">{p.name}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-slate-500">{formatIDRXFromBigInt(p.deposited)} IDRX</span>
+                  <span className="font-semibold text-green-600 w-16 text-right">{p.apy.toFixed(1)}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-purple-200 flex justify-between text-xs text-purple-700">
+            <span>Total Yield Generated: {formatIDRXFromBigInt(onChainYield)} IDRX</span>
+            <span>5 protocols supported</span>
+          </div>
+        </div>
+
         {/* AI Recommendation Banner */}
         {recommendation && (
           <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
