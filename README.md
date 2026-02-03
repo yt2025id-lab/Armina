@@ -73,7 +73,7 @@ Open http://localhost:3000
 # Compile contracts
 npm run compile
 
-# Run tests (72 tests)
+# Run tests (73 tests)
 npm test
 
 # Deploy all contracts to Base Sepolia (ArminaPool + YieldOptimizer)
@@ -104,7 +104,7 @@ contracts/                # Solidity smart contracts
   ArminaReputation.sol    # Soulbound reputation NFT (score, levels, discounts)
   IDRX.sol                # Mock IDRX ERC20 token (500K faucet, 5hr cooldown)
 scripts/                  # Deployment & setup scripts
-test/                     # Hardhat tests (72 tests)
+test/                     # Hardhat tests (73 tests)
 src/
   app/                    # Next.js pages
     page.tsx              # Home — wallet, balance, pool stats
@@ -185,8 +185,8 @@ All transactions are sponsored via Coinbase Paymaster — users never need ETH f
 npm test
 ```
 
-72 tests covering:
-- **ArminaPool (47 tests):** IDRX token, pool creation, joining, payments, settlement, yield optimizer integration, VRF integration, reputation integration
+73 tests covering:
+- **ArminaPool (48 tests):** IDRX token, pool creation, joining, payments, settlement, yield optimizer integration, VRF integration, reputation integration, full lifecycle E2E
 - **ArminaYieldOptimizer (6 tests):** deployment, best APY selection, pool authorization, APY updates, deposits
 - **ArminaReputation (19 tests):** minting, soulbound transfers, pool authorization, score recording, levels & discounts
 
