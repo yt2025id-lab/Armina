@@ -5,7 +5,7 @@ import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
 import ArminaPoolABI from "@/contracts/abis/ArminaPool.json";
 import { Pool } from "@/types";
 
-const abi = ArminaPoolABI.abi;
+const abi = ArminaPoolABI;
 const address = ARMINA_POOL_ADDRESS;
 
 /**

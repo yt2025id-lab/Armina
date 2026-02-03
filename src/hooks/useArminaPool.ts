@@ -22,7 +22,7 @@ export function useArminaPool() {
       return writeContractsAsync({
         contracts: [{
           address: ARMINA_POOL_ADDRESS,
-          abi: ArminaPoolABI.abi as any,
+          abi: ArminaPoolABI as any,
           functionName,
           args,
         }],
@@ -31,7 +31,7 @@ export function useArminaPool() {
     } else {
       return writeContractAsync({
         address: ARMINA_POOL_ADDRESS,
-        abi: ArminaPoolABI.abi as any,
+        abi: ArminaPoolABI as any,
         functionName,
         args,
       });
@@ -50,11 +50,15 @@ export function useArminaPool() {
   const claimSettlement = (poolId: bigint) =>
     writePool('claimFinalSettlement', [poolId]);
 
+  const requestWinnerDraw = (poolId: bigint) =>
+    writePool('requestWinnerDraw', [poolId]);
+
   return {
     createPool,
     joinPool,
     processPayment,
     claimSettlement,
+    requestWinnerDraw,
     isPending: isPendingSingle || isPendingBatch,
     isConfirming,
     isSuccess,
@@ -68,7 +72,7 @@ export function useArminaPool() {
 export function usePoolInfo(poolId: bigint) {
   const { data, isLoading, error, refetch } = useReadContract({
     address: ARMINA_POOL_ADDRESS,
-    abi: ArminaPoolABI.abi as any,
+    abi: ArminaPoolABI as any,
     functionName: 'getPoolInfo',
     args: [poolId],
   });
@@ -87,7 +91,7 @@ export function usePoolInfo(poolId: bigint) {
 export function useParticipantDetails(poolId: bigint, address: `0x${string}`) {
   const { data, isLoading, error, refetch } = useReadContract({
     address: ARMINA_POOL_ADDRESS,
-    abi: ArminaPoolABI.abi as any,
+    abi: ArminaPoolABI as any,
     functionName: 'getParticipantDetails',
     args: [poolId, address],
   });
@@ -106,7 +110,7 @@ export function useParticipantDetails(poolId: bigint, address: `0x${string}`) {
 export function usePoolCounter() {
   const { data, isLoading, error } = useReadContract({
     address: ARMINA_POOL_ADDRESS,
-    abi: ArminaPoolABI.abi as any,
+    abi: ArminaPoolABI as any,
     functionName: 'poolCounter',
   });
 

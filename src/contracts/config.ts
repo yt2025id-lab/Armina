@@ -15,6 +15,12 @@ export const CONTRACTS = {
     address: process.env.NEXT_PUBLIC_ARMINA_POOL_ADDRESS as `0x${string}`,
     chainId: 84532, // Base Sepolia
   },
+
+  // ArminaYieldOptimizer - AI yield optimization
+  YIELD_OPTIMIZER: {
+    address: process.env.NEXT_PUBLIC_YIELD_OPTIMIZER_ADDRESS as `0x${string}`,
+    chainId: 84532, // Base Sepolia
+  },
 } as const;
 
 // Network configuration
@@ -50,11 +56,13 @@ export const SUPPORTED_CHAINS = {
 export const CONTRACT_ADDRESSES = {
   IDRX: CONTRACTS.IDRX.address,
   ARMINA_POOL: CONTRACTS.ARMINA_POOL.address,
+  YIELD_OPTIMIZER: CONTRACTS.YIELD_OPTIMIZER.address,
 } as const;
 
 // Export individual addresses
 export const IDRX_ADDRESS = process.env.NEXT_PUBLIC_IDRX_ADDRESS as `0x${string}`;
 export const ARMINA_POOL_ADDRESS = process.env.NEXT_PUBLIC_ARMINA_POOL_ADDRESS as `0x${string}`;
+export const YIELD_OPTIMIZER_ADDRESS = process.env.NEXT_PUBLIC_YIELD_OPTIMIZER_ADDRESS as `0x${string}`;
 
 // Chain ID
 export const CHAIN_ID = 84532; // Base Sepolia

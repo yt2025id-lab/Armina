@@ -10,7 +10,7 @@
 
 ROTATE YOUR SAVINGS. EARN PASSIVE YIELD.
 
-Built on Base • Coinbase Smart Wallet • Privy • OnchainKit
+Built on Base • Coinbase Smart Wallet • privy • OnchainKit
 
 ---
 
@@ -89,7 +89,6 @@ On-chain rotating savings with enforced collateral and AI-powered yield.
 ---
 
 ## Slide 7: Market Opportunity
-
 # Why Indonesia? Why Now?
 
 **278M+ Population** — Rotating savings deeply embedded in daily life
@@ -108,7 +107,7 @@ On-chain rotating savings with enforced collateral and AI-powered yield.
 
 | | Traditional | PoolTogether | Aave | **Armina** |
 |--|-------------|--------------|------|------------|
-| Cultural Fit | ✅ | ❌ | ❌ | ✅ |
+| Cultural Fit |  ✅| ❌ | ❌ | ✅ |
 | Yield | ❌ | ✅ | ✅ | ✅ |
 | Rotating Payout | ✅ | ❌ | ❌ | ✅ |
 | Default Protection | ❌ | N/A | N/A | ✅ |

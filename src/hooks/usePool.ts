@@ -133,42 +133,42 @@ export function usePoolData(poolAddress: `0x${string}` | undefined) {
 
   const contribution = useReadContract({
     address: poolAddress,
-    abi: ARMINA_POOL_ABI,
+    abi: ARMINA_POOL_ABI as any,
     functionName: "contribution",
     query: { enabled },
   });
 
   const maxParticipants = useReadContract({
     address: poolAddress,
-    abi: ARMINA_POOL_ABI,
+    abi: ARMINA_POOL_ABI as any,
     functionName: "maxParticipants",
     query: { enabled },
   });
 
   const participantCount = useReadContract({
     address: poolAddress,
-    abi: ARMINA_POOL_ABI,
+    abi: ARMINA_POOL_ABI as any,
     functionName: "getParticipantCount",
     query: { enabled },
   });
 
   const currentRound = useReadContract({
     address: poolAddress,
-    abi: ARMINA_POOL_ABI,
+    abi: ARMINA_POOL_ABI as any,
     functionName: "currentRound",
     query: { enabled },
   });
 
   const isActive = useReadContract({
     address: poolAddress,
-    abi: ARMINA_POOL_ABI,
+    abi: ARMINA_POOL_ABI as any,
     functionName: "isActive",
     query: { enabled },
   });
 
   const isCompleted = useReadContract({
     address: poolAddress,
-    abi: ARMINA_POOL_ABI,
+    abi: ARMINA_POOL_ABI as any,
     functionName: "isCompleted",
     query: { enabled },
   });
@@ -193,7 +193,7 @@ export function useCollateralForUser(
 ) {
   return useReadContract({
     address: poolAddress,
-    abi: ARMINA_POOL_ABI,
+    abi: ARMINA_POOL_ABI as any,
     functionName: "getCollateralForUser",
     args: userAddress ? [userAddress] : undefined,
     query: {
@@ -213,7 +213,7 @@ export function useJoinPool() {
   const joinPool = (poolAddress: `0x${string}`) => {
     writeContract({
       address: poolAddress,
-      abi: ARMINA_POOL_ABI,
+      abi: ARMINA_POOL_ABI as any,
       functionName: "join",
       ...(capabilities && { capabilities }),
     } as any);
@@ -240,7 +240,7 @@ export function useContribute() {
   const contribute = (poolAddress: `0x${string}`) => {
     writeContract({
       address: poolAddress,
-      abi: ARMINA_POOL_ABI,
+      abi: ARMINA_POOL_ABI as any,
       functionName: "contribute",
       ...(capabilities && { capabilities }),
     } as any);
@@ -267,7 +267,7 @@ export function useClaimCollateral() {
   const claimCollateral = (poolAddress: `0x${string}`) => {
     writeContract({
       address: poolAddress,
-      abi: ARMINA_POOL_ABI,
+      abi: ARMINA_POOL_ABI as any,
       functionName: "claimCollateral",
       ...(capabilities && { capabilities }),
     } as any);

@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePoolDetails, useParticipantInfo } from "@/hooks/usePoolData";
 import { useArminaPool } from "@/hooks/useArminaPool";
 import { useApproveIDRX } from "@/hooks/useIDRX";
+import { useCollateralDiscount } from "@/hooks/useReputation";
+import { useYieldData } from "@/hooks/useYieldData";
 import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
 import { formatIDRX, calculateCollateral, formatAddress } from "@/lib/constants";
 import toast from "react-hot-toast";
@@ -23,16 +25,25 @@ export default function PoolDetailsPage({
   // Real contract data
   const { data: pool, raw: rawPool, isLoading: isPoolLoading } = usePoolDetails(poolId);
   const { data: participant } = useParticipantInfo(poolId, address);
-  const { joinPool, isPending: isJoinPending, isConfirming: isJoinConfirming, isSuccess: joinSuccess } = useArminaPool();
+  const { joinPool, requestWinnerDraw, isPending: isActionPending, isConfirming: isActionConfirming, isSuccess: actionSuccess } = useArminaPool();
   const { approve, isPending: isApproving } = useApproveIDRX();
 
-  const isJoining = isJoinPending || isJoinConfirming || isApproving;
+  // Reputation discount
+  const { data: collateralDiscountRaw } = useCollateralDiscount(address);
+  const collateralDiscount = Number(collateralDiscountRaw || 0);
+
+  // Live yield data from DeFiLlama
+  const { recommendation, protocols: yieldProtocols } = useYieldData();
+  const liveAPY = recommendation?.apy || (yieldProtocols.length > 0 ? yieldProtocols[0].apy : 0);
+  const displayAPY = liveAPY > 0 ? liveAPY : 12.5; // Fallback to 12.5%
+
+  const isJoining = isActionPending || isActionConfirming || isApproving;
 
   useEffect(() => {
-    if (joinSuccess) {
-      toast.success("Joined pool successfully!", { id: "join" });
+    if (actionSuccess) {
+      toast.success("Transaction successful!", { id: "pool-action" });
     }
-  }, [joinSuccess]);
+  }, [actionSuccess]);
 
   if (isPoolLoading) {
     return (
@@ -62,15 +73,19 @@ export default function PoolDetailsPage({
     );
   }
 
-  const collateral = calculateCollateral(pool.contribution, pool.maxParticipants);
+  const baseCollateral = calculateCollateral(pool.contribution, pool.maxParticipants);
+  const discountedCollateral = collateralDiscount > 0
+    ? baseCollateral - (baseCollateral * BigInt(collateralDiscount) / BigInt(100))
+    : baseCollateral;
+  const collateral = discountedCollateral;
   const totalDueAtJoin = collateral + pool.contribution;
   const spotsRemaining = pool.maxParticipants - pool.currentParticipants;
   const progressPercentage = (pool.currentParticipants / pool.maxParticipants) * 100;
   const isOpen = !pool.isActive && !pool.isCompleted && spotsRemaining > 0;
   const monthlyPot = pool.contribution * BigInt(pool.maxParticipants);
 
-  // Placeholder APY (from contract: 8%)
-  const apy = 8;
+  // Live APY calculations
+  const apy = displayAPY;
   const collateralYield = (Number(collateral) * apy * pool.maxParticipants) / (100 * 12);
   const potYield = (Number(monthlyPot) * apy * pool.maxParticipants) / (100 * 12);
 
@@ -84,12 +99,23 @@ export default function PoolDetailsPage({
       toast.loading("Approving IDRX...", { id: "approve" });
       approve(ARMINA_POOL_ADDRESS, totalDueAtJoin);
 
-      toast.loading("Joining pool...", { id: "join" });
+      toast.loading("Joining pool...", { id: "pool-action" });
       await joinPool(poolId);
       toast.dismiss("approve");
     } catch (error) {
       console.error("Error joining pool:", error);
-      toast.error("Failed to join pool", { id: "join" });
+      toast.error("Failed to join pool", { id: "pool-action" });
+    }
+  };
+
+  const handleDrawWinner = async () => {
+    try {
+      toast.loading("Requesting VRF randomness...", { id: "pool-action" });
+      await requestWinnerDraw(poolId);
+      toast.success("Winner draw requested! Chainlink VRF will select winner shortly.", { id: "pool-action" });
+    } catch (error) {
+      console.error("Error requesting winner draw:", error);
+      toast.error("Failed to request winner draw", { id: "pool-action" });
     }
   };
 
@@ -127,8 +153,13 @@ export default function PoolDetailsPage({
             </p>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold">{apy}%</div>
-            <div className="text-xs text-white/70">APY</div>
+            <div className="text-2xl font-bold">{apy.toFixed(1)}%</div>
+            <div className="text-xs text-white/70 flex items-center gap-1 justify-end">
+              {liveAPY > 0 && (
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse inline-block" />
+              )}
+              {liveAPY > 0 ? "Live APY" : "Est. APY"}
+            </div>
           </div>
         </div>
       </div>
@@ -173,6 +204,37 @@ export default function PoolDetailsPage({
           )}
         </div>
 
+        {/* VRF Winner Draw Section - for active pools */}
+        {pool.isActive && (
+          <div className="mb-6 p-5 bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-bold text-purple-900">Chainlink VRF Winner Draw</h3>
+                <p className="text-xs text-purple-700 mt-1">
+                  Round {pool.currentRound} of {pool.totalRounds} &middot; Provably fair on-chain randomness
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                <span className="text-lg">🎲</span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleDrawWinner}
+              disabled={isActionPending || isActionConfirming}
+              className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isActionPending || isActionConfirming
+                ? "Requesting VRF..."
+                : `Draw Winner for Round ${pool.currentRound}`}
+            </button>
+
+            <p className="text-xs text-purple-600 mt-2 text-center">
+              Only pool creator or contract owner can trigger the draw
+            </p>
+          </div>
+        )}
+
         {/* Payment Breakdown Card */}
         {isOpen && (
           <div className="mb-6 p-6 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] rounded-2xl text-white">
@@ -186,8 +248,29 @@ export default function PoolDetailsPage({
                     = 125% x ({pool.maxParticipants} x {formatIDRX(pool.contribution)})
                   </p>
                 </div>
-                <p className="text-xl font-bold">{formatIDRX(collateral)}</p>
+                <div className="text-right">
+                  {collateralDiscount > 0 ? (
+                    <>
+                      <p className="text-sm line-through text-white/40">{formatIDRX(baseCollateral)}</p>
+                      <p className="text-xl font-bold text-green-400">{formatIDRX(collateral)}</p>
+                    </>
+                  ) : (
+                    <p className="text-xl font-bold">{formatIDRX(baseCollateral)}</p>
+                  )}
+                </div>
               </div>
+
+              {/* Reputation Discount Badge */}
+              {collateralDiscount > 0 && (
+                <div className="p-3 bg-green-400/20 border border-green-400/30 rounded-xl">
+                  <p className="text-xs text-green-300 font-semibold">
+                    Reputation Discount: -{collateralDiscount}% collateral
+                  </p>
+                  <p className="text-xs text-green-200/80 mt-1">
+                    You saved {formatIDRX(baseCollateral - collateral)} IDRX thanks to your reputation level!
+                  </p>
+                </div>
+              )}
 
               <div className="flex justify-between items-center">
                 <p className="text-white/70 text-sm">First Month Payment</p>
@@ -210,7 +293,15 @@ export default function PoolDetailsPage({
 
         {/* Projected Earnings */}
         <div className="mb-6 p-5 bg-white border border-[#1e2a4a]/20 rounded-2xl">
-          <h3 className="font-bold text-[#1e2a4a] mb-4">Projected Earnings</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-[#1e2a4a]">Projected Earnings</h3>
+            {liveAPY > 0 && (
+              <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                Live Rates
+              </span>
+            )}
+          </div>
 
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="p-4 bg-slate-50 rounded-xl">
@@ -229,6 +320,15 @@ export default function PoolDetailsPage({
               <p className="text-xs text-slate-400">IDRX pot + pot yield</p>
             </div>
           </div>
+
+          {/* Yield Source Info */}
+          {recommendation && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-800">
+                <strong>AI Optimizer:</strong> Best yield via {recommendation.protocol} at {recommendation.apy.toFixed(1)}% APY
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Pool Details */}
@@ -252,7 +352,16 @@ export default function PoolDetailsPage({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600">APY Rate</span>
-              <span className="font-semibold text-green-600">{apy}%</span>
+              <span className="font-semibold text-green-600 flex items-center gap-1">
+                {apy.toFixed(1)}%
+                {liveAPY > 0 && (
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                )}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600">Winner Selection</span>
+              <span className="font-semibold text-purple-600">Chainlink VRF</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600">Contract</span>
@@ -378,9 +487,9 @@ export default function PoolDetailsPage({
                 ? "Connect Wallet to Join"
                 : isApproving
                 ? "Approving IDRX..."
-                : isJoinPending
+                : isActionPending
                 ? "Joining Pool..."
-                : isJoinConfirming
+                : isActionConfirming
                 ? "Confirming..."
                 : `Join Pool (${formatIDRX(totalDueAtJoin)})`}
             </button>

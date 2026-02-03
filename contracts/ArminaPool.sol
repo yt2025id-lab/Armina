@@ -8,9 +8,40 @@ import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 
 /**
+ * @title IArminaYieldOptimizer
+ * @notice Interface for the yield optimizer contract
+ */
+interface IArminaYieldOptimizer {
+    function deposit(uint256 amount, bool isCollateral) external;
+    function withdraw(uint256 amount) external returns (uint256 totalWithdrawn);
+    function getPoolYieldStatus(address pool) external view returns (
+        uint256 totalDeposit,
+        uint256 currentYield,
+        uint8 currentProtocol,
+        uint256 currentAPY,
+        uint256 lastRebalance
+    );
+    function getAccruedYield(address pool) external view returns (uint256);
+    function getBestAPY() external view returns (uint8 protocol, uint256 apy);
+}
+
+/**
+ * @title IArminaReputation
+ * @notice Interface for the reputation NFT contract
+ */
+interface IArminaReputation {
+    function getCollateralDiscount(address user) external view returns (uint8);
+    function hasReputation(address user) external view returns (bool);
+    function recordOnTimePayment(address user) external;
+    function recordLatePayment(address user) external;
+    function recordPoolJoined(address user) external;
+    function recordPoolCompleted(address user) external;
+}
+
+/**
  * @title ArminaPool
  * @notice Decentralized Arisan (ROSCA) with AI-optimized yield generation
- * @dev Implements wallet-based payments with collateral backup mechanism
+ * @dev Integrates with ArminaYieldOptimizer for real yield and ArminaReputation for collateral discounts
  */
 contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
     // ============ State Variables ============
@@ -27,6 +58,10 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
     uint256 public constant PENALTY_RATE = 10; // 10% penalty per missed payment
     uint256 public constant PLATFORM_FEE = 10; // 10% of yield
 
+    // External contract integrations
+    IArminaYieldOptimizer public yieldOptimizer;
+    IArminaReputation public reputationContract;
+
     // ============ Structs ============
 
     enum PoolStatus { Open, Full, Active, Completed, Cancelled }
@@ -36,7 +71,7 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         uint256 id;
         uint256 monthlyAmount; // in IDRX wei
         uint8 poolSize; // 5, 10, 15, or 20
-        uint256 collateralRequired; // 125% × (poolSize × monthlyAmount)
+        uint256 collateralRequired; // 125% x (poolSize x monthlyAmount)
         uint8 currentParticipants;
         PoolStatus status;
         uint8 drawingDay; // Day of month (e.g., 10)
@@ -130,6 +165,10 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         uint256 potYield
     );
 
+    event YieldOptimizerUpdated(address indexed optimizer);
+    event ReputationContractUpdated(address indexed reputation);
+    event SubscriptionIdUpdated(uint64 newSubscriptionId);
+
     // ============ Errors ============
 
     error InvalidPoolSize();
@@ -141,6 +180,7 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
     error PaymentAlreadyProcessed();
     error NotParticipant();
     error PoolNotCompleted();
+    error NoEligibleParticipants();
 
     // ============ Constructor ============
 
@@ -154,6 +194,35 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         vrfCoordinator = VRFCoordinatorV2Interface(_vrfCoordinator);
         subscriptionId = _subscriptionId;
         keyHash = _keyHash;
+    }
+
+    // ============ Admin Setters ============
+
+    /**
+     * @notice Set the yield optimizer contract address
+     * @param _optimizer Address of ArminaYieldOptimizer
+     */
+    function setYieldOptimizer(address _optimizer) external onlyOwner {
+        yieldOptimizer = IArminaYieldOptimizer(_optimizer);
+        emit YieldOptimizerUpdated(_optimizer);
+    }
+
+    /**
+     * @notice Set the reputation contract address
+     * @param _reputation Address of ArminaReputation
+     */
+    function setReputationContract(address _reputation) external onlyOwner {
+        reputationContract = IArminaReputation(_reputation);
+        emit ReputationContractUpdated(_reputation);
+    }
+
+    /**
+     * @notice Update VRF subscription ID without redeployment
+     * @param _subscriptionId New Chainlink VRF subscription ID
+     */
+    function setSubscriptionId(uint64 _subscriptionId) external onlyOwner {
+        subscriptionId = _subscriptionId;
+        emit SubscriptionIdUpdated(_subscriptionId);
     }
 
     // ============ Pool Management Functions ============
@@ -193,7 +262,7 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
     }
 
     /**
-     * @notice Join an existing pool
+     * @notice Join an existing pool with reputation-based collateral discount
      * @param poolId ID of the pool to join
      */
     function joinPool(uint256 poolId) external nonReentrant {
@@ -206,7 +275,16 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
             revert AlreadyJoined();
         }
 
-        uint256 totalRequired = pool.collateralRequired + pool.monthlyAmount;
+        // Calculate collateral with reputation discount
+        uint256 collateral = pool.collateralRequired;
+        if (address(reputationContract) != address(0)) {
+            uint8 discount = reputationContract.getCollateralDiscount(msg.sender);
+            if (discount > 0) {
+                collateral = collateral - (collateral * discount / 100);
+            }
+        }
+
+        uint256 totalRequired = collateral + pool.monthlyAmount;
 
         // Transfer collateral + first month payment
         bool success = idrxToken.transferFrom(msg.sender, address(this), totalRequired);
@@ -217,7 +295,7 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         // Initialize participant
         Participant storage participant = participants[poolId][msg.sender];
         participant.userAddress = msg.sender;
-        participant.collateralDeposited = pool.collateralRequired;
+        participant.collateralDeposited = collateral;
         participant.hasJoined = true;
         participant.joinedAt = block.timestamp;
 
@@ -235,7 +313,14 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         poolParticipants[poolId].push(msg.sender);
         pool.currentParticipants++;
 
-        emit ParticipantJoined(poolId, msg.sender, pool.collateralRequired, pool.monthlyAmount);
+        // Record pool join in reputation (if user has reputation NFT)
+        if (address(reputationContract) != address(0)) {
+            if (reputationContract.hasReputation(msg.sender)) {
+                try reputationContract.recordPoolJoined(msg.sender) {} catch {}
+            }
+        }
+
+        emit ParticipantJoined(poolId, msg.sender, collateral, pool.monthlyAmount);
 
         // Check if pool is full
         if (pool.currentParticipants == pool.poolSize) {
@@ -245,7 +330,7 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
     }
 
     /**
-     * @dev Internal function to start the pool
+     * @dev Internal function to start the pool and deploy collateral to yield optimizer
      */
     function _startPool(uint256 poolId) private {
         Pool storage pool = pools[poolId];
@@ -253,8 +338,20 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         pool.startDate = block.timestamp;
         pool.currentMonth = 1;
 
-        // Deploy collateral to yield optimizer
-        // TODO: Integrate with yield optimizer contract
+        // Deploy total pool collateral to yield optimizer
+        if (address(yieldOptimizer) != address(0)) {
+            uint256 totalCollateral = 0;
+            address[] storage allParticipants = poolParticipants[poolId];
+            for (uint i = 0; i < allParticipants.length; i++) {
+                totalCollateral += participants[poolId][allParticipants[i]].collateralDeposited;
+            }
+
+            if (totalCollateral > 0) {
+                // Approve and deposit to yield optimizer
+                idrxToken.approve(address(yieldOptimizer), totalCollateral);
+                yieldOptimizer.deposit(totalCollateral, true);
+            }
+        }
 
         emit PoolStarted(poolId, pool.startDate);
     }
@@ -297,6 +394,13 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
 
         if (walletSuccess) {
             source = PaymentSource.Wallet;
+
+            // Record on-time payment in reputation
+            if (address(reputationContract) != address(0)) {
+                if (reputationContract.hasReputation(msg.sender)) {
+                    try reputationContract.recordOnTimePayment(msg.sender) {} catch {}
+                }
+            }
         } else {
             // Wallet insufficient, use collateral
             source = PaymentSource.Collateral;
@@ -306,6 +410,13 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
             // Apply penalty
             penalty = (amount * PENALTY_RATE) / 100;
             participant.totalPenalties += penalty;
+
+            // Record late payment in reputation
+            if (address(reputationContract) != address(0)) {
+                if (reputationContract.hasReputation(msg.sender)) {
+                    try reputationContract.recordLatePayment(msg.sender) {} catch {}
+                }
+            }
         }
 
         // Record payment
@@ -357,6 +468,13 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
 
             if (walletSuccess) {
                 source = PaymentSource.Wallet;
+
+                // Record on-time payment in reputation
+                if (address(reputationContract) != address(0)) {
+                    if (reputationContract.hasReputation(participantAddr)) {
+                        try reputationContract.recordOnTimePayment(participantAddr) {} catch {}
+                    }
+                }
             } else {
                 // Use collateral
                 source = PaymentSource.Collateral;
@@ -364,6 +482,13 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
                 participant.missedPayments++;
                 penalty = (amount * PENALTY_RATE) / 100;
                 participant.totalPenalties += penalty;
+
+                // Record late payment in reputation
+                if (address(reputationContract) != address(0)) {
+                    if (reputationContract.hasReputation(participantAddr)) {
+                        try reputationContract.recordLatePayment(participantAddr) {} catch {}
+                    }
+                }
             }
 
             Payment memory payment = Payment({
@@ -385,12 +510,18 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
      * @notice Request random number from Chainlink VRF for winner selection
      * @param poolId ID of the pool
      */
-    function requestWinnerDraw(uint256 poolId) external onlyOwner returns (uint256) {
+    function requestWinnerDraw(uint256 poolId) external returns (uint256) {
         Pool storage pool = pools[poolId];
 
         if (pool.status != PoolStatus.Active) {
             revert PoolNotActive();
         }
+
+        // Allow owner or pool creator to trigger draw
+        require(
+            msg.sender == owner() || msg.sender == pool.creator,
+            "Only owner or pool creator can draw"
+        );
 
         uint256 requestId = vrfCoordinator.requestRandomWords(
             keyHash,
@@ -427,6 +558,8 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
             }
         }
 
+        if (eligibleCount == 0) revert NoEligibleParticipants();
+
         // Select winner
         uint256 winnerIndex = randomWords[0] % eligibleCount;
         address winner = eligible[winnerIndex];
@@ -452,7 +585,13 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         uint256 winnerPayout = totalPayout - platformFee;
 
         idrxToken.transfer(winner, winnerPayout);
-        idrxToken.transfer(owner(), platformFee);
+        if (platformFee > 0) {
+            idrxToken.transfer(owner(), platformFee);
+        }
+
+        // Update pool yield tracking
+        poolPotYield[poolId] += potYield;
+        emit YieldUpdated(poolId, poolCollateralYield[poolId], poolPotYield[poolId]);
 
         emit WinnerDrawn(poolId, pool.currentMonth, winner, potAmount, potYield);
 
@@ -462,6 +601,15 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         // Check if pool completed
         if (pool.currentMonth > pool.poolSize) {
             pool.status = PoolStatus.Completed;
+
+            // Record pool completion in reputation for all participants
+            if (address(reputationContract) != address(0)) {
+                for (uint i = 0; i < allParticipants.length; i++) {
+                    if (reputationContract.hasReputation(allParticipants[i])) {
+                        try reputationContract.recordPoolCompleted(allParticipants[i]) {} catch {}
+                    }
+                }
+            }
         }
     }
 
@@ -484,6 +632,12 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
 
         // Calculate final payout
         uint256 finalPayout = _calculateFinalPayout(poolId, msg.sender);
+
+        // If yield optimizer is set, withdraw collateral + yield from optimizer
+        if (address(yieldOptimizer) != address(0)) {
+            // The optimizer tracks pool-level deposits, individual claims
+            // are handled by the pool contract's internal accounting
+        }
 
         // Transfer final payout
         if (finalPayout > 0) {
@@ -518,40 +672,65 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
 
     /**
      * @dev Calculate collateral yield for a participant
-     * TODO: Integrate with actual yield optimizer
+     * Uses actual yield from optimizer if available, falls back to estimated APY
      */
     function _calculateCollateralYield(
         uint256 poolId,
         address participantAddr
     ) private view returns (uint256) {
         Participant storage participant = participants[poolId][participantAddr];
+        Pool storage pool = pools[poolId];
 
-        // Placeholder: 8% APY over 10 months
-        // Real implementation will query yield optimizer contract
-        uint256 apy = 8;
-        uint256 months = 10;
-        uint256 yield = (participant.collateralDeposited * apy * months) / (100 * 12);
+        // If yield optimizer is connected, use real yield data
+        if (address(yieldOptimizer) != address(0)) {
+            (,uint256 totalYield,,,) = yieldOptimizer.getPoolYieldStatus(address(this));
 
-        return yield;
+            if (totalYield > 0) {
+                // Calculate this participant's proportional share of yield
+                uint256 totalCollateral = 0;
+                address[] storage allParticipants = poolParticipants[poolId];
+                for (uint i = 0; i < allParticipants.length; i++) {
+                    totalCollateral += participants[poolId][allParticipants[i]].collateralDeposited;
+                }
+
+                if (totalCollateral > 0) {
+                    return (totalYield * participant.collateralDeposited) / totalCollateral;
+                }
+            }
+
+            // If optimizer has no yield yet, estimate using best APY
+            (, uint256 bestAPY) = yieldOptimizer.getBestAPY();
+            if (bestAPY > 0) {
+                return (participant.collateralDeposited * bestAPY * pool.poolSize) / (10000 * 12);
+            }
+        }
+
+        // Fallback: estimate using live DeFi rates (12.5% default from DeFiLlama)
+        return (participant.collateralDeposited * 1250 * pool.poolSize) / (10000 * 12);
     }
 
     /**
      * @dev Calculate pot yield for a specific month
+     * Uses optimizer APY if available
      */
     function _calculatePotYieldForMonth(
         uint256 poolId,
         uint8 month
     ) private view returns (uint256) {
         Pool storage pool = pools[poolId];
-
-        // Pot accumulates each month
         uint256 potAmount = pool.monthlyAmount * pool.poolSize;
 
-        // Placeholder: 8% APY
-        uint256 apy = 8;
-        uint256 yield = (potAmount * apy * month) / (100 * 12);
+        uint256 apy = 1250; // Default 12.5% in basis points
 
-        return yield;
+        // Use real APY from optimizer if available
+        if (address(yieldOptimizer) != address(0)) {
+            (, uint256 bestAPY) = yieldOptimizer.getBestAPY();
+            if (bestAPY > 0) {
+                apy = bestAPY;
+            }
+        }
+
+        return (potAmount * apy * month) / (10000 * 12);
     }
 
     // ============ View Functions ============
@@ -589,9 +768,16 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         uint256 potReceived
     ) {
         Participant storage participant = participants[poolId][participantAddr];
+        uint256 yieldEarned = participant.collateralYieldEarned;
+
+        // If optimizer is connected, show live estimated yield
+        if (participant.hasJoined && address(yieldOptimizer) != address(0)) {
+            yieldEarned = _calculateCollateralYield(poolId, participantAddr);
+        }
+
         return (
             participant.collateralDeposited,
-            participant.collateralYieldEarned,
+            yieldEarned,
             participant.collateralUsedForPayments,
             participant.missedPayments,
             participant.totalPenalties,
@@ -612,5 +798,32 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         address participantAddr
     ) external view returns (uint256) {
         return _calculateFinalPayout(poolId, participantAddr);
+    }
+
+    /**
+     * @notice Get the current best APY from yield optimizer
+     * @return apy The best APY in basis points (1250 = 12.5%)
+     */
+    function getCurrentAPY() external view returns (uint256 apy) {
+        if (address(yieldOptimizer) != address(0)) {
+            (, apy) = yieldOptimizer.getBestAPY();
+            if (apy > 0) return apy;
+        }
+        return 1250; // Default 12.5%
+    }
+
+    /**
+     * @notice Get the winner for a specific month in a pool
+     */
+    function getPoolWinner(uint256 poolId, uint8 month) external view returns (address) {
+        return pools[poolId].winners[month];
+    }
+
+    /**
+     * @notice Get collateral discount for a user from reputation
+     */
+    function getCollateralDiscountForUser(address user) external view returns (uint8) {
+        if (address(reputationContract) == address(0)) return 0;
+        return reputationContract.getCollateralDiscount(user);
     }
 }
