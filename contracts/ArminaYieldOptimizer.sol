@@ -61,6 +61,7 @@ contract ArminaYieldOptimizer is Ownable, ReentrancyGuard {
     mapping(address => bool) public authorizedPools;
 
     address public aiAgent; // Off-chain AI agent that monitors and triggers rebalance
+    address public functionsContract; // Chainlink Functions contract for on-chain APY updates
 
     uint256 public totalDeposited;
     uint256 public totalYieldGenerated;
@@ -87,7 +88,7 @@ contract ArminaYieldOptimizer is Ownable, ReentrancyGuard {
     }
 
     modifier onlyAIAgent() {
-        if (msg.sender != aiAgent && msg.sender != owner()) revert NotAuthorized();
+        if (msg.sender != aiAgent && msg.sender != owner() && msg.sender != functionsContract) revert NotAuthorized();
         _;
     }
 
@@ -368,6 +369,14 @@ contract ArminaYieldOptimizer is Ownable, ReentrancyGuard {
     function setAIAgent(address _agent) external onlyOwner {
         aiAgent = _agent;
         emit AIAgentUpdated(_agent);
+    }
+
+    /**
+     * @notice Set the Chainlink Functions contract for on-chain APY updates
+     * @param _functions Address of ArminaFunctions contract
+     */
+    function setFunctionsContract(address _functions) external onlyOwner {
+        functionsContract = _functions;
     }
 
     function setProtocol(

@@ -21,6 +21,18 @@ export const CONTRACTS = {
     address: process.env.NEXT_PUBLIC_YIELD_OPTIMIZER_ADDRESS as `0x${string}`,
     chainId: 84532, // Base Sepolia
   },
+
+  // ArminaAutomation - Chainlink Automation keeper
+  AUTOMATION: {
+    address: process.env.NEXT_PUBLIC_AUTOMATION_ADDRESS as `0x${string}`,
+    chainId: 84532, // Base Sepolia
+  },
+
+  // ArminaFunctions - Chainlink Functions for off-chain APY data
+  FUNCTIONS: {
+    address: process.env.NEXT_PUBLIC_FUNCTIONS_ADDRESS as `0x${string}`,
+    chainId: 84532, // Base Sepolia
+  },
 } as const;
 
 // Network configuration
@@ -57,12 +69,16 @@ export const CONTRACT_ADDRESSES = {
   IDRX: CONTRACTS.IDRX.address,
   ARMINA_POOL: CONTRACTS.ARMINA_POOL.address,
   YIELD_OPTIMIZER: CONTRACTS.YIELD_OPTIMIZER.address,
+  AUTOMATION: CONTRACTS.AUTOMATION.address,
+  FUNCTIONS: CONTRACTS.FUNCTIONS.address,
 } as const;
 
 // Export individual addresses
 export const IDRX_ADDRESS = process.env.NEXT_PUBLIC_IDRX_ADDRESS as `0x${string}`;
 export const ARMINA_POOL_ADDRESS = process.env.NEXT_PUBLIC_ARMINA_POOL_ADDRESS as `0x${string}`;
 export const YIELD_OPTIMIZER_ADDRESS = process.env.NEXT_PUBLIC_YIELD_OPTIMIZER_ADDRESS as `0x${string}`;
+export const AUTOMATION_ADDRESS = process.env.NEXT_PUBLIC_AUTOMATION_ADDRESS as `0x${string}`;
+export const FUNCTIONS_ADDRESS = process.env.NEXT_PUBLIC_FUNCTIONS_ADDRESS as `0x${string}`;
 
 // Chain ID
 export const CHAIN_ID = 84532; // Base Sepolia

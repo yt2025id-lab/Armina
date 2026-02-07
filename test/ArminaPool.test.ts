@@ -500,7 +500,7 @@ describe("ArminaPool", function () {
       // user1 is not creator or owner
       await expect(
         pool.connect(user1).requestWinnerDraw(1)
-      ).to.be.revertedWith("Only owner or pool creator can draw");
+      ).to.be.revertedWith("Only owner, creator, or automation can draw");
     });
 
     it("should return pool winner address", async function () {

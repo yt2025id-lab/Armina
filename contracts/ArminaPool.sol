@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 /**
  * @title IArminaYieldOptimizer
@@ -61,6 +62,12 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
     // External contract integrations
     IArminaYieldOptimizer public yieldOptimizer;
     IArminaReputation public reputationContract;
+
+    // Chainlink Data Feed (ETH/USD price oracle)
+    AggregatorV3Interface public priceFeed;
+
+    // Chainlink Automation contract (authorized to trigger draws)
+    address public automationContract;
 
     // ============ Structs ============
 
@@ -168,6 +175,8 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
     event YieldOptimizerUpdated(address indexed optimizer);
     event ReputationContractUpdated(address indexed reputation);
     event SubscriptionIdUpdated(uint64 newSubscriptionId);
+    event PriceFeedUpdated(address indexed feed);
+    event AutomationContractUpdated(address indexed automation);
 
     // ============ Errors ============
 
@@ -223,6 +232,24 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
     function setSubscriptionId(uint64 _subscriptionId) external onlyOwner {
         subscriptionId = _subscriptionId;
         emit SubscriptionIdUpdated(_subscriptionId);
+    }
+
+    /**
+     * @notice Set the Chainlink Data Feed for ETH/USD price oracle
+     * @param _feed Address of AggregatorV3Interface price feed
+     */
+    function setPriceFeed(address _feed) external onlyOwner {
+        priceFeed = AggregatorV3Interface(_feed);
+        emit PriceFeedUpdated(_feed);
+    }
+
+    /**
+     * @notice Set the Chainlink Automation contract authorized to trigger draws
+     * @param _automation Address of ArminaAutomation contract
+     */
+    function setAutomationContract(address _automation) external onlyOwner {
+        automationContract = _automation;
+        emit AutomationContractUpdated(_automation);
     }
 
     // ============ Pool Management Functions ============
@@ -517,10 +544,10 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
             revert PoolNotActive();
         }
 
-        // Allow owner or pool creator to trigger draw
+        // Allow owner, pool creator, or automation contract to trigger draw
         require(
-            msg.sender == owner() || msg.sender == pool.creator,
-            "Only owner or pool creator can draw"
+            msg.sender == owner() || msg.sender == pool.creator || msg.sender == automationContract,
+            "Only owner, creator, or automation can draw"
         );
 
         uint256 requestId = vrfCoordinator.requestRandomWords(
@@ -825,5 +852,53 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
     function getCollateralDiscountForUser(address user) external view returns (uint8) {
         if (address(reputationContract) == address(0)) return 0;
         return reputationContract.getCollateralDiscount(user);
+    }
+
+    // ============ Chainlink Data Feed Functions ============
+
+    /**
+     * @notice Get latest ETH/USD price from Chainlink Data Feed
+     * @return price The latest ETH/USD price (8 decimals)
+     */
+    function getLatestETHPrice() external view returns (int256 price) {
+        if (address(priceFeed) == address(0)) return 0;
+        (, price, , , ) = priceFeed.latestRoundData();
+    }
+
+    /**
+     * @notice Get collateral value in USD using Chainlink price feed
+     * @param poolId ID of the pool
+     * @param participant Address of the participant
+     * @return idrxAmount Collateral in IDRX
+     * @return ethUsdPrice Current ETH/USD price
+     * @return usdValue Estimated USD value (IDRX pegged ~1 IDR, 1 USD ≈ 16,000 IDR)
+     */
+    function getCollateralValueUSD(uint256 poolId, address participant)
+        external view returns (uint256 idrxAmount, int256 ethUsdPrice, uint256 usdValue)
+    {
+        idrxAmount = participants[poolId][participant].collateralDeposited;
+
+        if (address(priceFeed) != address(0)) {
+            (, ethUsdPrice, , , ) = priceFeed.latestRoundData();
+        }
+
+        // IDRX uses 2 decimals; 1 IDRX = 1 IDR; 1 USD ≈ 16,000 IDR
+        // usdValue = idrxAmount / 10^2 / 16000
+        usdValue = idrxAmount / 1_600_000;
+    }
+
+    /**
+     * @notice Get dynamic collateral multiplier based on price feed freshness
+     * @return multiplier Collateral multiplier (125 = 125%, 150 = 150% if stale)
+     */
+    function getDynamicCollateralMultiplier() public view returns (uint256) {
+        if (address(priceFeed) == address(0)) return 125;
+
+        (, , , uint256 updatedAt, ) = priceFeed.latestRoundData();
+
+        // If price feed is stale (>1 hour), increase collateral requirement
+        if (block.timestamp - updatedAt > 3600) return 150;
+
+        return 125;
     }
 }
