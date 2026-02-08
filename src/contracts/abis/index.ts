@@ -5,6 +5,7 @@ export { ARMINA_REPUTATION_ABI } from "./ArminaReputation";
 export { ARMINA_YIELD_OPTIMIZER_ABI } from "./ArminaYieldOptimizer";
 export { ARMINA_AUTOMATION_ABI } from "./ArminaAutomation";
 export { ARMINA_FUNCTIONS_ABI } from "./ArminaFunctions";
+export { ARMINA_CCIP_ABI } from "./ArminaCCIP";
 
 // Contract addresses (from .env.local after deployment)
 export const CONTRACTS = {
@@ -14,4 +15,5 @@ export const CONTRACTS = {
   YIELD_OPTIMIZER: process.env.NEXT_PUBLIC_YIELD_OPTIMIZER_ADDRESS as `0x${string}` | undefined,
   AUTOMATION: process.env.NEXT_PUBLIC_AUTOMATION_ADDRESS as `0x${string}` | undefined,
   FUNCTIONS: process.env.NEXT_PUBLIC_FUNCTIONS_ADDRESS as `0x${string}` | undefined,
+  CCIP: process.env.NEXT_PUBLIC_CCIP_ADDRESS as `0x${string}` | undefined,
 };

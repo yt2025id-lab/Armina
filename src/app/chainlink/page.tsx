@@ -22,9 +22,14 @@ import {
   useFunctionsGasLimit,
 } from "@/hooks/useFunctions";
 import {
+  useCCIPTotalJoins,
+  useCCIPTotalMessages,
+} from "@/hooks/useCCIP";
+import {
   ARMINA_POOL_ADDRESS,
   AUTOMATION_ADDRESS,
   FUNCTIONS_ADDRESS,
+  CCIP_ADDRESS,
 } from "@/contracts/config";
 
 const truncateAddress = (addr: string | undefined) => {
@@ -64,6 +69,10 @@ export default function ChainlinkPage() {
   // Price Feed / APY data
   const { currentAPY, currentAPYPercent } = useChainlinkPriceFeed();
 
+  // CCIP data
+  const { totalJoins: ccipTotalJoins } = useCCIPTotalJoins();
+  const { totalMessages: ccipTotalMessages } = useCCIPTotalMessages();
+
   // Functions data
   const { lastAPY, lastAPYPercent } = useFunctionsLastAPY();
   const { protocolId, protocolName } = useFunctionsLastProtocol();
@@ -77,17 +86,17 @@ export default function ChainlinkPage() {
       {/* Hero Header */}
       <div className="bg-[#1e2a4a] px-5 pt-10 pb-10 text-white">
         <div className="mb-6 text-center">
-          <h1 className="text-4xl font-bold">Chainlink Integrations</h1>
+          <h1 className="text-4xl font-bold">Chainlink CRE</h1>
           <p className="text-white/60 text-sm mt-2">
-            4 Chainlink services powering Armina on Base Sepolia
+            5 Chainlink products orchestrated as a Runtime Environment
           </p>
         </div>
 
         {/* Summary Stats */}
         <div className="grid grid-cols-2 gap-3">
           <div className="p-4 bg-white/10 backdrop-blur rounded-xl text-center">
-            <p className="text-xs text-white/60">Services Active</p>
-            <p className="text-3xl font-bold text-white">4</p>
+            <p className="text-xs text-white/60">CRE Products</p>
+            <p className="text-3xl font-bold text-white">5</p>
             <p className="text-xs text-green-400">All Operational</p>
           </div>
           <div className="p-4 bg-white/10 backdrop-blur rounded-xl text-center">
@@ -405,6 +414,103 @@ export default function ChainlinkPage() {
           </div>
         </div>
 
+        {/* 5. CCIP Card */}
+        <div className="p-5 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
+                <span className="text-white text-sm font-bold">CCIP</span>
+              </div>
+              <div>
+                <p className="font-bold text-red-900">Chainlink CCIP</p>
+                <p className="text-xs text-red-600">Cross-Chain Interoperability</p>
+              </div>
+            </div>
+            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+              Active
+            </span>
+          </div>
+
+          <div className="p-4 bg-white rounded-xl mb-3">
+            <p className="text-sm text-slate-600 mb-3">
+              CCIP enables cross-chain pool participation. Users on Ethereum Sepolia can join Armina pools
+              on Base Sepolia via secure cross-chain messages, with source chain and sender validation.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="p-3 bg-red-50 rounded-lg text-center">
+                <p className="text-xs text-slate-500">Cross-Chain Joins</p>
+                <p className="text-xl font-bold text-red-900">{ccipTotalJoins}</p>
+              </div>
+              <div className="p-3 bg-red-50 rounded-lg text-center">
+                <p className="text-xs text-slate-500">Messages Received</p>
+                <p className="text-xl font-bold text-red-900">{ccipTotalMessages}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Source Chain</span>
+                <span className="font-semibold text-red-900">Ethereum Sepolia</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Destination</span>
+                <span className="font-semibold text-red-900">Base Sepolia</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Contract</span>
+                <a
+                  href={CCIP_ADDRESS ? `https://sepolia.basescan.org/address/${CCIP_ADDRESS}` : "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-red-600 hover:text-red-800 text-xs"
+                >
+                  {truncateAddress(CCIP_ADDRESS)}
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-red-600">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span>Secure cross-chain messaging with allowlist validation</span>
+          </div>
+        </div>
+
+        {/* CRE Workflow */}
+        <div className="p-5 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] rounded-2xl text-white">
+          <p className="font-semibold mb-2">CRE Monthly Cycle</p>
+          <p className="text-white/50 text-xs mb-4">All 5 products orchestrated in one unified workflow</p>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 p-3 bg-blue-500/20 rounded-lg">
+              <span className="text-blue-300 font-bold text-xs w-6">1.</span>
+              <span className="text-blue-300 font-bold text-xs">AUTO</span>
+              <span className="text-white/80 text-xs flex-1">Automation triggers monthly cycle</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-orange-500/20 rounded-lg">
+              <span className="text-orange-300 font-bold text-xs w-6">2.</span>
+              <span className="text-orange-300 font-bold text-xs">FN</span>
+              <span className="text-white/80 text-xs flex-1">Functions refreshes APY from DeFiLlama DON</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-green-500/20 rounded-lg">
+              <span className="text-green-300 font-bold text-xs w-6">3.</span>
+              <span className="text-green-300 font-bold text-xs">DF</span>
+              <span className="text-white/80 text-xs flex-1">Data Feeds enforces dynamic collateral (125%/150%)</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-purple-500/20 rounded-lg">
+              <span className="text-purple-300 font-bold text-xs w-6">4.</span>
+              <span className="text-purple-300 font-bold text-xs">VRF</span>
+              <span className="text-white/80 text-xs flex-1">VRF selects winner with provable randomness</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-red-500/20 rounded-lg">
+              <span className="text-red-300 font-bold text-xs w-6">5.</span>
+              <span className="text-red-300 font-bold text-xs">CCIP</span>
+              <span className="text-white/80 text-xs flex-1">Cross-chain users join pools from Ethereum</span>
+            </div>
+          </div>
+        </div>
+
         {/* Architecture Overview */}
         <div className="p-5 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] rounded-2xl text-white">
           <p className="font-semibold mb-4">Architecture Overview</p>
@@ -424,7 +530,7 @@ export default function ChainlinkPage() {
               </div>
               <div>
                 <p className="font-medium">Automation -- ArminaAutomation</p>
-                <p className="text-white/60 text-xs">Keeper checks pools for due draws and harvests, triggers upkeep when interval passes</p>
+                <p className="text-white/60 text-xs">Keeper triggers Functions APY refresh + yield harvest + VRF draw in one orchestrated cycle</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -433,7 +539,7 @@ export default function ChainlinkPage() {
               </div>
               <div>
                 <p className="font-medium">Data Feeds -- ArminaPool</p>
-                <p className="text-white/60 text-xs">ETH/USD price feed used for collateral valuation and yield calculations</p>
+                <p className="text-white/60 text-xs">ETH/USD price feed enforces dynamic collateral multiplier (125% fresh, 150% stale)</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -442,7 +548,16 @@ export default function ChainlinkPage() {
               </div>
               <div>
                 <p className="font-medium">Functions -- ArminaFunctions</p>
-                <p className="text-white/60 text-xs">Executes JavaScript off-chain to fetch DeFiLlama APY data and updates YieldOptimizer on-chain</p>
+                <p className="text-white/60 text-xs">Fetches DeFiLlama APY data via DON, auto-triggers rebalance when APY changes significantly</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-red-500/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-bold text-red-300">5</span>
+              </div>
+              <div>
+                <p className="font-medium">CCIP -- ArminaCCIP</p>
+                <p className="text-white/60 text-xs">Cross-chain pool joining from Ethereum Sepolia via secure CCIP messages with allowlist validation</p>
               </div>
             </div>
           </div>
@@ -450,13 +565,14 @@ export default function ChainlinkPage() {
 
         {/* Tech Stack Badge */}
         <div className="p-5 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] rounded-2xl text-white">
-          <p className="font-semibold mb-3">Powered By Chainlink</p>
+          <p className="font-semibold mb-3">Powered By Chainlink CRE</p>
           <div className="flex flex-wrap gap-2">
             {[
               "VRF V2.5",
               "Automation",
               "Data Feeds",
               "Functions",
+              "CCIP",
               "Base Sepolia",
             ].map((tech) => (
               <span
@@ -468,7 +584,7 @@ export default function ChainlinkPage() {
             ))}
           </div>
           <p className="text-white/50 text-xs mt-3">
-            All Chainlink services are deployed and verified on Base Sepolia testnet
+            5 Chainlink products deployed and verified on Base Sepolia as a unified CRE
           </p>
         </div>
       </div>

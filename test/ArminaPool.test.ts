@@ -373,7 +373,7 @@ describe("ArminaPool", function () {
 
       await expect(
         pool.connect(user1).setYieldOptimizer(optimizerAddr)
-      ).to.be.revertedWithCustomError(pool, "OwnableUnauthorizedAccount");
+      ).to.be.revertedWith("Only callable by owner");
     });
 
     it("should return current APY from optimizer", async function () {
@@ -446,7 +446,7 @@ describe("ArminaPool", function () {
 
       await expect(
         pool.connect(user1).setSubscriptionId(12345)
-      ).to.be.revertedWithCustomError(pool, "OwnableUnauthorizedAccount");
+      ).to.be.revertedWith("Only callable by owner");
     });
 
     it("should reject winner draw for non-active pool", async function () {

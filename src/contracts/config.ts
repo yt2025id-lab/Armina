@@ -33,6 +33,12 @@ export const CONTRACTS = {
     address: process.env.NEXT_PUBLIC_FUNCTIONS_ADDRESS as `0x${string}`,
     chainId: 84532, // Base Sepolia
   },
+
+  // ArminaCCIP - Chainlink CCIP cross-chain receiver
+  CCIP: {
+    address: process.env.NEXT_PUBLIC_CCIP_ADDRESS as `0x${string}`,
+    chainId: 84532, // Base Sepolia
+  },
 } as const;
 
 // Network configuration
@@ -71,6 +77,7 @@ export const CONTRACT_ADDRESSES = {
   YIELD_OPTIMIZER: CONTRACTS.YIELD_OPTIMIZER.address,
   AUTOMATION: CONTRACTS.AUTOMATION.address,
   FUNCTIONS: CONTRACTS.FUNCTIONS.address,
+  CCIP: CONTRACTS.CCIP.address,
 } as const;
 
 // Export individual addresses
@@ -79,6 +86,7 @@ export const ARMINA_POOL_ADDRESS = process.env.NEXT_PUBLIC_ARMINA_POOL_ADDRESS a
 export const YIELD_OPTIMIZER_ADDRESS = process.env.NEXT_PUBLIC_YIELD_OPTIMIZER_ADDRESS as `0x${string}`;
 export const AUTOMATION_ADDRESS = process.env.NEXT_PUBLIC_AUTOMATION_ADDRESS as `0x${string}`;
 export const FUNCTIONS_ADDRESS = process.env.NEXT_PUBLIC_FUNCTIONS_ADDRESS as `0x${string}`;
+export const CCIP_ADDRESS = process.env.NEXT_PUBLIC_CCIP_ADDRESS as `0x${string}`;
 
 // Chain ID
 export const CHAIN_ID = 84532; // Base Sepolia

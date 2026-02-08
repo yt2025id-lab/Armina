@@ -2,10 +2,9 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
-import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import "@chainlink/contracts/src/v0.8/dev/vrf/VRFConsumerBaseV2Plus.sol";
+import "@chainlink/contracts/src/v0.8/dev/vrf/libraries/VRFV2PlusClient.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 /**
@@ -44,13 +43,12 @@ interface IArminaReputation {
  * @notice Decentralized Arisan (ROSCA) with AI-optimized yield generation
  * @dev Integrates with ArminaYieldOptimizer for real yield and ArminaReputation for collateral discounts
  */
-contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
+contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
     // ============ State Variables ============
 
     IERC20 public immutable idrxToken;
-    VRFCoordinatorV2Interface public immutable vrfCoordinator;
 
-    uint64 public subscriptionId;
+    uint256 public subscriptionId;
     bytes32 public keyHash;
     uint32 public callbackGasLimit = 100000;
     uint16 public requestConfirmations = 3;
@@ -68,6 +66,7 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
 
     // Chainlink Automation contract (authorized to trigger draws)
     address public automationContract;
+    address public ccipContract;
 
     // ============ Structs ============
 
@@ -174,9 +173,10 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
 
     event YieldOptimizerUpdated(address indexed optimizer);
     event ReputationContractUpdated(address indexed reputation);
-    event SubscriptionIdUpdated(uint64 newSubscriptionId);
+    event SubscriptionIdUpdated(uint256 newSubscriptionId);
     event PriceFeedUpdated(address indexed feed);
     event AutomationContractUpdated(address indexed automation);
+    event CCIPContractUpdated(address indexed ccip);
 
     // ============ Errors ============
 
@@ -196,11 +196,10 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
     constructor(
         address _idrxToken,
         address _vrfCoordinator,
-        uint64 _subscriptionId,
+        uint256 _subscriptionId,
         bytes32 _keyHash
-    ) VRFConsumerBaseV2(_vrfCoordinator) Ownable(msg.sender) {
+    ) VRFConsumerBaseV2Plus(_vrfCoordinator) {
         idrxToken = IERC20(_idrxToken);
-        vrfCoordinator = VRFCoordinatorV2Interface(_vrfCoordinator);
         subscriptionId = _subscriptionId;
         keyHash = _keyHash;
     }
@@ -229,7 +228,7 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
      * @notice Update VRF subscription ID without redeployment
      * @param _subscriptionId New Chainlink VRF subscription ID
      */
-    function setSubscriptionId(uint64 _subscriptionId) external onlyOwner {
+    function setSubscriptionId(uint256 _subscriptionId) external onlyOwner {
         subscriptionId = _subscriptionId;
         emit SubscriptionIdUpdated(_subscriptionId);
     }
@@ -250,6 +249,15 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
     function setAutomationContract(address _automation) external onlyOwner {
         automationContract = _automation;
         emit AutomationContractUpdated(_automation);
+    }
+
+    /**
+     * @notice Set the CCIP contract authorized for cross-chain pool joins
+     * @param _ccip Address of ArminaCCIP contract
+     */
+    function setCCIPContract(address _ccip) external onlyOwner {
+        ccipContract = _ccip;
+        emit CCIPContractUpdated(_ccip);
     }
 
     // ============ Pool Management Functions ============
@@ -302,8 +310,9 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
             revert AlreadyJoined();
         }
 
-        // Calculate collateral with reputation discount
-        uint256 collateral = pool.collateralRequired;
+        // Calculate collateral using dynamic multiplier from Data Feed
+        uint256 multiplier = getDynamicCollateralMultiplier();
+        uint256 collateral = (pool.monthlyAmount * pool.poolSize * multiplier) / 100;
         if (address(reputationContract) != address(0)) {
             uint8 discount = reputationContract.getCollateralDiscount(msg.sender);
             if (discount > 0) {
@@ -348,6 +357,77 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
         }
 
         emit ParticipantJoined(poolId, msg.sender, collateral, pool.monthlyAmount);
+
+        // Check if pool is full
+        if (pool.currentParticipants == pool.poolSize) {
+            pool.status = PoolStatus.Full;
+            _startPool(poolId);
+        }
+    }
+
+    /**
+     * @notice Join a pool on behalf of a cross-chain participant via CCIP
+     * @param poolId ID of the pool to join
+     * @param participant Address of the cross-chain participant
+     */
+    function joinPoolFor(uint256 poolId, address participant) external nonReentrant {
+        require(msg.sender == ccipContract, "Only CCIP contract");
+        Pool storage pool = pools[poolId];
+
+        if (pool.status != PoolStatus.Open) {
+            revert PoolNotOpen();
+        }
+        if (participants[poolId][participant].hasJoined) {
+            revert AlreadyJoined();
+        }
+
+        // Calculate collateral using dynamic multiplier from Data Feed
+        uint256 multiplier = getDynamicCollateralMultiplier();
+        uint256 collateral = (pool.monthlyAmount * pool.poolSize * multiplier) / 100;
+        if (address(reputationContract) != address(0)) {
+            uint8 discount = reputationContract.getCollateralDiscount(participant);
+            if (discount > 0) {
+                collateral = collateral - (collateral * discount / 100);
+            }
+        }
+
+        uint256 totalRequired = collateral + pool.monthlyAmount;
+
+        // Transfer from CCIP contract (which holds bridged tokens)
+        bool success = idrxToken.transferFrom(msg.sender, address(this), totalRequired);
+        if (!success) {
+            revert InsufficientPayment();
+        }
+
+        // Initialize participant
+        Participant storage p = participants[poolId][participant];
+        p.userAddress = participant;
+        p.collateralDeposited = collateral;
+        p.hasJoined = true;
+        p.joinedAt = block.timestamp;
+
+        // Record first payment
+        Payment memory firstPayment = Payment({
+            month: 1,
+            amount: pool.monthlyAmount,
+            source: PaymentSource.Wallet,
+            penaltyApplied: 0,
+            timestamp: block.timestamp
+        });
+        paymentHistory[poolId][participant].push(firstPayment);
+
+        // Add to participants list
+        poolParticipants[poolId].push(participant);
+        pool.currentParticipants++;
+
+        // Record pool join in reputation
+        if (address(reputationContract) != address(0)) {
+            if (reputationContract.hasReputation(participant)) {
+                try reputationContract.recordPoolJoined(participant) {} catch {}
+            }
+        }
+
+        emit ParticipantJoined(poolId, participant, collateral, pool.monthlyAmount);
 
         // Check if pool is full
         if (pool.currentParticipants == pool.poolSize) {
@@ -550,12 +630,17 @@ contract ArminaPool is ReentrancyGuard, Ownable, VRFConsumerBaseV2 {
             "Only owner, creator, or automation can draw"
         );
 
-        uint256 requestId = vrfCoordinator.requestRandomWords(
-            keyHash,
-            subscriptionId,
-            requestConfirmations,
-            callbackGasLimit,
-            1 // numWords
+        uint256 requestId = s_vrfCoordinator.requestRandomWords(
+            VRFV2PlusClient.RandomWordsRequest({
+                keyHash: keyHash,
+                subId: subscriptionId,
+                requestConfirmations: requestConfirmations,
+                callbackGasLimit: callbackGasLimit,
+                numWords: 1,
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
+                )
+            })
         );
 
         vrfRequestToPoolId[requestId] = poolId;

@@ -6,11 +6,12 @@ import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/dev/v1_0
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title IYieldOptimizerUpdate
- * @notice Interface for updating APY on yield optimizer
+ * @title IYieldOptimizerRebalance
+ * @notice Interface for updating APY and triggering rebalance on yield optimizer
  */
-interface IYieldOptimizerUpdate {
+interface IYieldOptimizerRebalance {
     function updateAPY(uint8 protocol, uint256 apy) external;
+    function rebalance(address pool) external;
 }
 
 /**
@@ -29,8 +30,14 @@ interface IYieldOptimizerUpdate {
 contract ArminaFunctions is FunctionsClient, Ownable {
     using FunctionsRequest for FunctionsRequest.Request;
 
-    // Yield optimizer to update
-    IYieldOptimizerUpdate public yieldOptimizer;
+    // Yield optimizer to update and rebalance
+    IYieldOptimizerRebalance public yieldOptimizer;
+
+    // ArminaPool address for rebalance target
+    address public arminaPool;
+
+    // APY change threshold to trigger rebalance (basis points, 100 = 1%)
+    uint256 public rebalanceThreshold = 100;
 
     // Chainlink Functions configuration
     uint64 public subscriptionId;
@@ -56,6 +63,7 @@ contract ArminaFunctions is FunctionsClient, Ownable {
     // Events
     event APYRequested(bytes32 indexed requestId);
     event APYFetched(bytes32 indexed requestId, uint8 protocol, uint256 apy);
+    event RebalanceTriggered(address indexed pool, uint8 protocol, uint256 newAPY);
     event RequestFailed(bytes32 indexed requestId, bytes error);
 
     constructor(
@@ -116,12 +124,25 @@ contract ArminaFunctions is FunctionsClient, Ownable {
             uint8 protocolId = uint8(value / 1e18);
             uint256 apy = value % 1e18;
 
+            // Store previous APY for delta check
+            uint256 previousAPY = lastAPY;
+
             lastProtocolId = protocolId;
             lastAPY = apy;
 
             // Update yield optimizer
             if (address(yieldOptimizer) != address(0) && protocolId > 0 && protocolId <= 5) {
                 try yieldOptimizer.updateAPY(protocolId, apy) {} catch {}
+
+                // Auto-trigger rebalance if APY changed significantly
+                if (arminaPool != address(0) && previousAPY > 0) {
+                    uint256 apyDiff = apy > previousAPY ? apy - previousAPY : previousAPY - apy;
+                    if (apyDiff >= rebalanceThreshold) {
+                        try yieldOptimizer.rebalance(arminaPool) {
+                            emit RebalanceTriggered(arminaPool, protocolId, apy);
+                        } catch {}
+                    }
+                }
             }
 
             emit APYFetched(requestId, protocolId, apy);
@@ -133,7 +154,15 @@ contract ArminaFunctions is FunctionsClient, Ownable {
     // ============ Admin Functions ============
 
     function setYieldOptimizer(address _optimizer) external onlyOwner {
-        yieldOptimizer = IYieldOptimizerUpdate(_optimizer);
+        yieldOptimizer = IYieldOptimizerRebalance(_optimizer);
+    }
+
+    function setArminaPool(address _pool) external onlyOwner {
+        arminaPool = _pool;
+    }
+
+    function setRebalanceThreshold(uint256 _threshold) external onlyOwner {
+        rebalanceThreshold = _threshold;
     }
 
     function setSource(string calldata _source) external onlyOwner {

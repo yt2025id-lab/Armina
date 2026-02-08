@@ -32,6 +32,14 @@ interface IYieldOptimizerAutomation {
 }
 
 /**
+ * @title IArminaFunctionsAutomation
+ * @notice Minimal interface for triggering Functions APY refresh
+ */
+interface IArminaFunctionsAutomation {
+    function requestAPYUpdate() external returns (bytes32);
+}
+
+/**
  * @title ArminaAutomation
  * @notice Chainlink Automation compatible contract for autonomous pool operations
  * @dev Automatically triggers monthly winner draws and yield harvesting
@@ -45,9 +53,13 @@ interface IYieldOptimizerAutomation {
 contract ArminaAutomation is AutomationCompatibleInterface, Ownable {
     IArminaPoolAutomation public arminaPool;
     IYieldOptimizerAutomation public yieldOptimizer;
+    IArminaFunctionsAutomation public arminaFunctions;
 
     // Automation interval (seconds between draws per pool)
     uint256 public automationInterval;
+
+    // Whether to trigger APY update as part of monthly cycle
+    bool public triggerAPYUpdateOnCycle = true;
 
     // Track last draw timestamp per pool
     mapping(uint256 => uint256) public lastDrawTimestamp;
@@ -58,6 +70,7 @@ contract ArminaAutomation is AutomationCompatibleInterface, Ownable {
     // Events
     event AutomatedDraw(uint256 indexed poolId, uint256 timestamp);
     event AutomatedHarvest(address indexed pool, uint256 timestamp);
+    event AutomatedAPYUpdate(uint256 indexed poolId, uint256 timestamp);
     event IntervalUpdated(uint256 newInterval);
 
     constructor(
@@ -117,14 +130,21 @@ contract ArminaAutomation is AutomationCompatibleInterface, Ownable {
         if (lastDraw == 0) lastDraw = startDate;
         require(block.timestamp >= lastDraw + automationInterval, "Too early");
 
-        // Harvest yield before draw
+        // Step 1: Trigger Functions APY refresh (CRE orchestration)
+        if (triggerAPYUpdateOnCycle && address(arminaFunctions) != address(0)) {
+            try arminaFunctions.requestAPYUpdate() {
+                emit AutomatedAPYUpdate(poolId, block.timestamp);
+            } catch {}
+        }
+
+        // Step 2: Harvest yield before draw
         if (address(yieldOptimizer) != address(0)) {
             try yieldOptimizer.harvestYield(address(arminaPool)) {
                 emit AutomatedHarvest(address(arminaPool), block.timestamp);
             } catch {}
         }
 
-        // Trigger VRF winner draw
+        // Step 3: Trigger VRF winner draw
         arminaPool.requestWinnerDraw(poolId);
 
         lastDrawTimestamp[poolId] = block.timestamp;
@@ -146,5 +166,13 @@ contract ArminaAutomation is AutomationCompatibleInterface, Ownable {
 
     function setOptimizer(address _optimizer) external onlyOwner {
         yieldOptimizer = IYieldOptimizerAutomation(_optimizer);
+    }
+
+    function setFunctions(address _functions) external onlyOwner {
+        arminaFunctions = IArminaFunctionsAutomation(_functions);
+    }
+
+    function setTriggerAPYUpdate(bool _trigger) external onlyOwner {
+        triggerAPYUpdateOnCycle = _trigger;
     }
 }
