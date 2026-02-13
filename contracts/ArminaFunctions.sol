@@ -88,7 +88,7 @@ contract ArminaFunctions is FunctionsClient, Ownable {
      * @notice Request APY update from Chainlink Functions DON
      * @return requestId The Chainlink Functions request ID
      */
-    function requestAPYUpdate() external returns (bytes32 requestId) {
+    function requestAPYUpdate() external onlyOwner returns (bytes32 requestId) {
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(source);
 

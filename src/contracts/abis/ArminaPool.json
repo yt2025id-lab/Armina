@@ -12,9 +12,9 @@
         "type": "address"
       },
       {
-        "internalType": "uint64",
+        "internalType": "uint256",
         "name": "_subscriptionId",
-        "type": "uint64"
+        "type": "uint256"
       },
       {
         "internalType": "bytes32",
@@ -27,7 +27,17 @@
   },
   {
     "inputs": [],
+    "name": "AlreadyClaimed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "AlreadyJoined",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DrawAlreadyRequested",
     "type": "error"
   },
   {
@@ -75,22 +85,21 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "owner",
+        "name": "have",
         "type": "address"
-      }
-    ],
-    "name": "OwnableInvalidOwner",
-    "type": "error"
-  },
-  {
-    "inputs": [
+      },
       {
         "internalType": "address",
-        "name": "account",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "coordinator",
         "type": "address"
       }
     ],
-    "name": "OwnableUnauthorizedAccount",
+    "name": "OnlyOwnerOrCoordinator",
     "type": "error"
   },
   {
@@ -117,6 +126,48 @@
     "inputs": [],
     "name": "ReentrancyGuardReentrantCall",
     "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroAddress",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "automation",
+        "type": "address"
+      }
+    ],
+    "name": "AutomationContractUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "ccip",
+        "type": "address"
+      }
+    ],
+    "name": "CCIPContractUpdated",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -149,13 +200,32 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "previousOwner",
+        "name": "from",
         "type": "address"
       },
       {
         "indexed": true,
         "internalType": "address",
-        "name": "newOwner",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferRequested",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
         "type": "address"
       }
     ],
@@ -298,6 +368,19 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "feed",
+        "type": "address"
+      }
+    ],
+    "name": "PriceFeedUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "reputation",
         "type": "address"
       }
@@ -310,9 +393,9 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "uint64",
+        "internalType": "uint256",
         "name": "newSubscriptionId",
-        "type": "uint64"
+        "type": "uint256"
       }
     ],
     "name": "SubscriptionIdUpdated",
@@ -420,6 +503,26 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "acceptOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "automationContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -475,6 +578,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "ccipContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -514,6 +630,30 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "name": "drawRequested",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "user",
         "type": "address"
@@ -531,6 +671,40 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "participant",
+        "type": "address"
+      }
+    ],
+    "name": "getCollateralValueUSD",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "idrxAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "ethUsdPrice",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "usdValue",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getCurrentAPY",
     "outputs": [
@@ -538,6 +712,32 @@
         "internalType": "uint256",
         "name": "apy",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getDynamicCollateralMultiplier",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getLatestETHPrice",
+    "outputs": [
+      {
+        "internalType": "int256",
+        "name": "price",
+        "type": "int256"
       }
     ],
     "stateMutability": "view",
@@ -753,6 +953,24 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "participant",
+        "type": "address"
+      }
+    ],
+    "name": "joinPoolFor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "keyHash",
     "outputs": [
@@ -852,6 +1070,11 @@
         "internalType": "uint256",
         "name": "joinedAt",
         "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "hasClaimed",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -1046,6 +1269,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "priceFeed",
+    "outputs": [
+      {
+        "internalType": "contract AggregatorV3Interface",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -1077,13 +1313,6 @@
       }
     ],
     "name": "rawFulfillRandomWords",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "renounceOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1134,6 +1363,71 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "s_vrfCoordinator",
+    "outputs": [
+      {
+        "internalType": "contract IVRFCoordinatorV2Plus",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_automation",
+        "type": "address"
+      }
+    ],
+    "name": "setAutomationContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_ccip",
+        "type": "address"
+      }
+    ],
+    "name": "setCCIPContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vrfCoordinator",
+        "type": "address"
+      }
+    ],
+    "name": "setCoordinator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_feed",
+        "type": "address"
+      }
+    ],
+    "name": "setPriceFeed",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -1149,9 +1443,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint64",
+        "internalType": "uint256",
         "name": "_subscriptionId",
-        "type": "uint64"
+        "type": "uint256"
       }
     ],
     "name": "setSubscriptionId",
@@ -1177,9 +1471,9 @@
     "name": "subscriptionId",
     "outputs": [
       {
-        "internalType": "uint64",
+        "internalType": "uint256",
         "name": "",
-        "type": "uint64"
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1189,26 +1483,13 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "newOwner",
+        "name": "to",
         "type": "address"
       }
     ],
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "vrfCoordinator",
-    "outputs": [
-      {
-        "internalType": "contract VRFCoordinatorV2Interface",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

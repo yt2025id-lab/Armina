@@ -1,7 +1,7 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useWriteContracts } from 'wagmi/experimental';
 import { ARMINA_POOL_ADDRESS } from '@/contracts/config';
-import ArminaPoolABI from '@/contracts/abis/ArminaPool.json';
+import { ARMINA_POOL_ABI } from '@/contracts/abis';
 import { usePaymasterCapabilities } from './usePaymaster';
 
 /**
@@ -22,7 +22,7 @@ export function useArminaPool() {
       return writeContractsAsync({
         contracts: [{
           address: ARMINA_POOL_ADDRESS,
-          abi: ArminaPoolABI as any,
+          abi: ARMINA_POOL_ABI as any,
           functionName,
           args,
         }],
@@ -31,7 +31,7 @@ export function useArminaPool() {
     } else {
       return writeContractAsync({
         address: ARMINA_POOL_ADDRESS,
-        abi: ArminaPoolABI as any,
+        abi: ARMINA_POOL_ABI as any,
         functionName,
         args,
       });
@@ -72,8 +72,8 @@ export function useArminaPool() {
 export function usePoolInfo(poolId: bigint) {
   const { data, isLoading, error, refetch } = useReadContract({
     address: ARMINA_POOL_ADDRESS,
-    abi: ArminaPoolABI as any,
-    functionName: 'getPoolInfo',
+    abi: ARMINA_POOL_ABI as any,
+    functionName: 'getPoolDetails',
     args: [poolId],
   });
 
@@ -86,37 +86,6 @@ export function usePoolInfo(poolId: bigint) {
 }
 
 /**
- * Hook for reading participant details
+ * Note: useParticipantDetails (as useParticipantInfo) and usePoolCounter
+ * are defined in usePoolData.ts to avoid duplicate exports.
  */
-export function useParticipantDetails(poolId: bigint, address: `0x${string}`) {
-  const { data, isLoading, error, refetch } = useReadContract({
-    address: ARMINA_POOL_ADDRESS,
-    abi: ArminaPoolABI as any,
-    functionName: 'getParticipantDetails',
-    args: [poolId, address],
-  });
-
-  return {
-    participant: data as any,
-    isLoading,
-    error,
-    refetch,
-  };
-}
-
-/**
- * Hook for reading pool counter
- */
-export function usePoolCounter() {
-  const { data, isLoading, error } = useReadContract({
-    address: ARMINA_POOL_ADDRESS,
-    abi: ArminaPoolABI as any,
-    functionName: 'poolCounter',
-  });
-
-  return {
-    poolCounter: data as bigint,
-    isLoading,
-    error,
-  };
-}

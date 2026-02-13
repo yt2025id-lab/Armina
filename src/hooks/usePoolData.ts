@@ -2,10 +2,10 @@
 
 import { useReadContract, useReadContracts } from "wagmi";
 import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
-import ArminaPoolABI from "@/contracts/abis/ArminaPool.json";
+import { ARMINA_POOL_ABI } from "@/contracts/abis";
 import { Pool } from "@/types";
 
-const abi = ArminaPoolABI;
+const abi = ARMINA_POOL_ABI;
 const address = ARMINA_POOL_ADDRESS;
 
 /**

@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@chainlink/contracts/src/v0.8/dev/vrf/VRFConsumerBaseV2Plus.sol";
 import "@chainlink/contracts/src/v0.8/dev/vrf/libraries/VRFV2PlusClient.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
@@ -44,6 +45,8 @@ interface IArminaReputation {
  * @dev Integrates with ArminaYieldOptimizer for real yield and ArminaReputation for collateral discounts
  */
 contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
+    using SafeERC20 for IERC20;
+
     // ============ State Variables ============
 
     IERC20 public immutable idrxToken;
@@ -101,6 +104,7 @@ contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
         uint256 potYieldReceived;
         bool hasJoined;
         uint256 joinedAt;
+        bool hasClaimed;
     }
 
     struct Payment {
@@ -118,6 +122,7 @@ contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
     mapping(uint256 => mapping(address => Payment[])) public paymentHistory;
     mapping(uint256 => address[]) public poolParticipants;
     mapping(uint256 => uint256) public vrfRequestToPoolId;
+    mapping(uint256 => mapping(uint8 => bool)) public drawRequested;
 
     // Yield optimizer integration
     mapping(uint256 => uint256) public poolCollateralYield; // Total yield for pool's collateral
@@ -190,6 +195,8 @@ contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
     error NotParticipant();
     error PoolNotCompleted();
     error NoEligibleParticipants();
+    error AlreadyClaimed();
+    error DrawAlreadyRequested();
 
     // ============ Constructor ============
 
@@ -323,10 +330,7 @@ contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
         uint256 totalRequired = collateral + pool.monthlyAmount;
 
         // Transfer collateral + first month payment
-        bool success = idrxToken.transferFrom(msg.sender, address(this), totalRequired);
-        if (!success) {
-            revert InsufficientPayment();
-        }
+        idrxToken.safeTransferFrom(msg.sender, address(this), totalRequired);
 
         // Initialize participant
         Participant storage participant = participants[poolId][msg.sender];
@@ -394,10 +398,7 @@ contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
         uint256 totalRequired = collateral + pool.monthlyAmount;
 
         // Transfer from CCIP contract (which holds bridged tokens)
-        bool success = idrxToken.transferFrom(msg.sender, address(this), totalRequired);
-        if (!success) {
-            revert InsufficientPayment();
-        }
+        idrxToken.safeTransferFrom(msg.sender, address(this), totalRequired);
 
         // Initialize participant
         Participant storage p = participants[poolId][participant];
@@ -455,7 +456,7 @@ contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
 
             if (totalCollateral > 0) {
                 // Approve and deposit to yield optimizer
-                idrxToken.approve(address(yieldOptimizer), totalCollateral);
+                idrxToken.forceApprove(address(yieldOptimizer), totalCollateral);
                 yieldOptimizer.deposit(totalCollateral, true);
             }
         }
@@ -496,10 +497,12 @@ contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
         PaymentSource source;
         uint256 penalty = 0;
 
-        // Try to deduct from wallet first
-        bool walletSuccess = idrxToken.transferFrom(msg.sender, address(this), amount);
+        // Try to deduct from wallet first (check balance + allowance)
+        uint256 balance = idrxToken.balanceOf(msg.sender);
+        uint256 allowance = idrxToken.allowance(msg.sender, address(this));
 
-        if (walletSuccess) {
+        if (balance >= amount && allowance >= amount) {
+            idrxToken.safeTransferFrom(msg.sender, address(this), amount);
             source = PaymentSource.Wallet;
 
             // Record on-time payment in reputation
@@ -570,10 +573,12 @@ contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
             PaymentSource source;
             uint256 penalty = 0;
 
-            // Try wallet first
-            bool walletSuccess = idrxToken.transferFrom(participantAddr, address(this), amount);
+            // Try wallet first (check balance + allowance)
+            uint256 bal = idrxToken.balanceOf(participantAddr);
+            uint256 allow = idrxToken.allowance(participantAddr, address(this));
 
-            if (walletSuccess) {
+            if (bal >= amount && allow >= amount) {
+                idrxToken.safeTransferFrom(participantAddr, address(this), amount);
                 source = PaymentSource.Wallet;
 
                 // Record on-time payment in reputation
@@ -629,6 +634,12 @@ contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
             msg.sender == owner() || msg.sender == pool.creator || msg.sender == automationContract,
             "Only owner, creator, or automation can draw"
         );
+
+        // Prevent multiple draws for the same month
+        if (drawRequested[poolId][pool.currentMonth]) {
+            revert DrawAlreadyRequested();
+        }
+        drawRequested[poolId][pool.currentMonth] = true;
 
         uint256 requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
@@ -696,9 +707,9 @@ contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
         uint256 platformFee = (potYield * PLATFORM_FEE) / 100;
         uint256 winnerPayout = totalPayout - platformFee;
 
-        idrxToken.transfer(winner, winnerPayout);
+        idrxToken.safeTransfer(winner, winnerPayout);
         if (platformFee > 0) {
-            idrxToken.transfer(owner(), platformFee);
+            idrxToken.safeTransfer(owner(), platformFee);
         }
 
         // Update pool yield tracking
@@ -741,19 +752,19 @@ contract ArminaPool is ReentrancyGuard, VRFConsumerBaseV2Plus {
         if (!participant.hasJoined) {
             revert NotParticipant();
         }
+        if (participant.hasClaimed) {
+            revert AlreadyClaimed();
+        }
+
+        // Mark as claimed before transfer (checks-effects-interactions)
+        participant.hasClaimed = true;
 
         // Calculate final payout
         uint256 finalPayout = _calculateFinalPayout(poolId, msg.sender);
 
-        // If yield optimizer is set, withdraw collateral + yield from optimizer
-        if (address(yieldOptimizer) != address(0)) {
-            // The optimizer tracks pool-level deposits, individual claims
-            // are handled by the pool contract's internal accounting
-        }
-
         // Transfer final payout
         if (finalPayout > 0) {
-            idrxToken.transfer(msg.sender, finalPayout);
+            idrxToken.safeTransfer(msg.sender, finalPayout);
         }
 
         emit FinalSettlement(poolId, msg.sender, finalPayout);
