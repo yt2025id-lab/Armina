@@ -3,6 +3,7 @@
 import { formatUnits } from "viem";
 import { useIDRXBalance } from "@/hooks/useIDRX";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   Wallet,
   WalletDropdown,
@@ -11,12 +12,96 @@ import {
 import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity";
 import { ConnectButton } from "./ConnectButton";
 import { useAuth } from "@/hooks/useAuth";
+import { useBalance } from "wagmi";
+
+const navItems = [
+  {
+    id: "home",
+    label: "Home",
+    href: "/",
+  },
+  {
+    id: "features",
+    label: "Features",
+    href: "#",
+    children: [
+      {
+        id: "optimizer",
+        label: "AI Yield",
+        href: "/optimizer",
+        description: "Maximize your crypto yields automatically",
+        icon: (
+          <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        )
+      },
+      {
+        id: "pool",
+        label: "Pool",
+        href: "/pool",
+        description: "Join no-loss prize savings pools",
+        icon: (
+          <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        )
+      },
+      {
+        id: "leaderboard",
+        label: "Rank",
+        href: "/peringkat",
+        description: "See top winners and savers",
+        icon: (
+          <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2a2 2 0 00-2 2v6" />
+          </svg>
+        )
+      },
+      {
+        id: "profile",
+        label: "Profile",
+        href: "/profil",
+        description: "Manage your deposits and rewards",
+        icon: (
+          <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        )
+      },
+      {
+        id: "faucet",
+        label: "Faucet",
+        href: "/profil#faucet",
+        description: "Get free IDRX for testing",
+        icon: (
+          <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+        )
+      },
+    ]
+  },
+  {
+    id: "about",
+    label: "About Us",
+    href: "/about",
+  },
+  {
+    id: "contact",
+    label: "Contact",
+    href: "/contact",
+  },
+];
 
 export function Header() {
   const pathname = usePathname();
   const isHomePage = pathname === "/";
   const { address, isConnected: isUserConnected } = useAuth();
   const { data: balance, isLoading } = useIDRXBalance(address);
+  const { data: ethBalance } = useBalance({
+    address: address,
+  });
 
   const formatBalance = (bal: bigint | undefined) => {
     if (!bal) return "0";
@@ -30,46 +115,139 @@ export function Header() {
     return value.toFixed(0);
   };
 
+  const formatETHBalance = (bal: bigint | undefined) => {
+    if (!bal) return "0";
+    const value = Number(formatUnits(bal, 18));
+    if (value >= 1) {
+      return value.toFixed(4);
+    }
+    if (value >= 0.0001) {
+      return value.toFixed(6);
+    }
+    return value.toFixed(8);
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-[#1e2a4a] text-white shadow-lg">
-      <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {/* IDRX Balance */}
+      <div className="w-full mx-auto px-4 md:px-8 h-18 py-2 flex items-center justify-between relative">
+        
+
+        {/* Center - Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/" && pathname.startsWith(item.href));
+
+            // Check if item has children (Dropdown)
+            if (item.children) {
+              const isChildActive = item.children.some(child => pathname.startsWith(child.href));
+
+              return (
+                <div key={item.id} className="relative group">
+                  <button
+                    className={`flex items-center gap-1 px-5 py-2 rounded-lg text-base font-medium transition-colors ${isChildActive
+                      ? "bg-white/80 text-[#1e2a4a] shadow-sm backdrop-blur-sm"
+                      : "text-white/90 hover:text-white hover:bg-white/10"
+                      }`}
+                  >
+                    {item.label}
+                    <svg className="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top translate-y-2 group-hover:translate-y-0 z-50">
+                    <div className="p-2 space-y-1">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.id}
+                          href={child.href}
+                          className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors group/item"
+                        >
+                          <div className="mt-1 p-2 bg-slate-50 rounded-lg group-hover/item:bg-white group-hover/item:shadow-sm transition-all">
+                            {child.icon}
+                          </div>
+                          <div>
+                            <p className="text-base font-bold text-slate-800">{child.label}</p>
+                            <p className="text-sm text-slate-500 mt-0.5 line-clamp-1">{child.description}</p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={`px-5 py-2 rounded-lg text-base font-medium transition-colors ${isActive
+                  ? "bg-white/80 text-[#1e2a4a] shadow-sm backdrop-blur-sm"
+                  : "text-white/90 hover:text-white hover:bg-white/10"
+                  }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Right Side - Balance & Wallet */}
+        <div className="flex items-center gap-3 ml-auto">
+          {/* ETH & IDRX Balance - 2 Columns */}
           {isUserConnected && address && (
-            <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg">
-              <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-              </svg>
-              <span className="text-sm font-semibold">
-                {isLoading ? "..." : formatBalance(balance)}
-              </span>
-              <span className="text-xs text-white/60">IDRX</span>
+            <div className="flex items-center bg-white/10 rounded-lg overflow-hidden divide-x divide-white/20">
+              {/* ETH Balance Column */}
+              <div className="flex items-center gap-2 px-4 py-2">
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-white">Ξ</span>
+                </div>
+                <span className="text-base font-semibold">
+                  {formatETHBalance(ethBalance?.value)}
+                </span>
+                <span className="text-sm text-white/60">ETH</span>
+              </div>
+
+              {/* IDRX Balance Column */}
+              <div className="flex items-center gap-2 px-4 py-2">
+                <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                </svg>
+                <span className="text-base font-semibold">
+                  {isLoading ? "..." : formatBalance(balance)}
+                </span>
+                <span className="text-sm text-white/60">IDRX</span>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Hide connect wallet on homepage - it has its own connect button */}
-        {!isHomePage && (
-          <div className="flex items-center gap-3">
-            {isUserConnected && address ? (
-              <Wallet>
-                <WalletDropdown>
-                  <Identity address={address} schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9">
-                    <Avatar className="w-6 h-6" />
-                    <Name className="text-sm text-white" />
-                    <Address className="text-xs text-white/70 font-mono" />
-                  </Identity>
-                  <WalletDropdownDisconnect className="text-xs" />
-                </WalletDropdown>
-              </Wallet>
-            ) : (
-              <ConnectButton variant="header">
-                Connect
-              </ConnectButton>
-            )}
-          </div>
-        )}
+          {/* Wallet Connection - Hide on homepage */}
+          {!isHomePage && (
+            <>
+              {isUserConnected && address ? (
+                <Wallet>
+                  <WalletDropdown>
+                    <Identity address={address} schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9">
+                      <Avatar className="w-8 h-8" />
+                      <Name className="text-base text-white" />
+                      <Address className="text-sm text-white/70 font-mono" />
+                    </Identity>
+                    <WalletDropdownDisconnect className="text-sm" />
+                  </WalletDropdown>
+                </Wallet>
+              ) : (
+                <ConnectButton variant="header">
+                  Connect
+                </ConnectButton>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

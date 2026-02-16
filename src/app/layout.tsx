@@ -43,7 +43,7 @@ export default function RootLayout({
           <ToastProvider />
           <div className="min-h-screen">
             <Header />
-            <main className="max-w-lg mx-auto pb-20">{children}</main>
+            <main className="w-full mx-auto pb-20 pt-4 px-4 md:px-8">{children}</main>
             <BottomNav />
           </div>
         </Providers>

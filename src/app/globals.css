@@ -178,6 +178,30 @@
   }
 }
 
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink {
+  50% { border-color: transparent }
+}
+
+.animate-typing {
+  overflow: hidden;
+  border-right: .15em solid orange;
+  white-space: nowrap;
+  margin: 0 auto;
+  letter-spacing: .15em;
+  animation: 
+    typing 3.5s steps(40, end),
+    blink .75s step-end infinite;
+}
+
+.animate-fade-in-up {
+  animation: slideUp 0.8s ease-out forwards;
+}
+
 /* Card styles */
 .card-hover {
   transition: all 0.15s ease;
