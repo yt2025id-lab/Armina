@@ -189,7 +189,7 @@ export default function PoolPage() {
         const canAfford = userBalance !== undefined && userBalance >= totalNeeded;
         const shortfall = userBalance !== undefined && userBalance < totalNeeded
           ? totalNeeded - userBalance
-          : 0n;
+          : BigInt(0);
 
         return (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">

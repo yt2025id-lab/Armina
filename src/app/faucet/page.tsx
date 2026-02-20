@@ -16,6 +16,7 @@ export default function FaucetPage() {
   const { claimFaucet, isPending, isConfirming, isSuccess, error } = useClaimFaucet();
   const { data: balance, refetch } = useIDRXBalance(address);
   const [lastClaimed, setLastClaimed] = useState<Date | null>(null);
+  const [claimCount, setClaimCount] = useState(0);
   const { t } = useLanguage();
   const chainId = useChainId();
   const { switchChain, switchChainAsync, isPending: isSwitching } = useSwitchChain();
@@ -27,6 +28,7 @@ export default function FaucetPage() {
       toast.success(t.claimSuccess);
       refetch();
       setLastClaimed(new Date());
+      setClaimCount((prev) => prev + 1);
     }
   }, [isSuccess, refetch, t.claimSuccess]);
 
@@ -51,7 +53,7 @@ export default function FaucetPage() {
         return;
       }
     }
-    toast.loading("Claiming IDRX from faucet...", { id: "claim" });
+    toast.loading("Claiming 500K IDRX...", { id: "claim" });
     claimFaucet();
   };
 
@@ -119,8 +121,7 @@ export default function FaucetPage() {
         {lastClaimed && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
             <p className="text-sm text-green-800">
-              ✓ Successfully claimed 500.000 IDRX at{" "}
-              {lastClaimed.toLocaleTimeString()}
+              ✓ Claimed {claimCount}x (total {(claimCount * 500000).toLocaleString("id-ID")} IDRX) — Last: {lastClaimed.toLocaleTimeString()}
             </p>
           </div>
         )}
@@ -146,7 +147,7 @@ export default function FaucetPage() {
         <button
           onClick={handleClaim}
           disabled={!isConnected || isSwitching || isPending || isConfirming}
-          className="w-full py-4 px-6 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] text-white rounded-xl font-bold hover:from-[#2a3a5c] hover:to-[#1e2a4a] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mb-4"
+          className="w-full py-4 px-6 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] text-white rounded-xl font-bold hover:from-[#2a3a5c] hover:to-[#1e2a4a] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mb-2"
         >
           {!isConnected
             ? t.connectToClaim
@@ -158,6 +159,7 @@ export default function FaucetPage() {
             ? t.confirming
             : t.claimIdrx}
         </button>
+        <p className="text-xs text-center text-slate-500 mb-4">No limit, no cooldown — click multiple times to get more!</p>
 
         {/* Info Cards */}
         <div className="space-y-4">
