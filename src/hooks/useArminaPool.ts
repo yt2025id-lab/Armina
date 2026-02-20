@@ -1,42 +1,23 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { useWriteContracts } from 'wagmi/experimental';
+import { baseSepolia } from 'wagmi/chains';
 import { ARMINA_POOL_ADDRESS } from '@/contracts/config';
 import { ARMINA_POOL_ABI } from '@/contracts/abis';
-import { usePaymasterCapabilities } from './usePaymaster';
 
 /**
- * Hook for writing to ArminaPool contract (with paymaster support)
+ * Hook for writing to ArminaPool contract
  */
 export function useArminaPool() {
-  const capabilities = usePaymasterCapabilities();
-
-  // EIP-5792 for paymaster
-  const { writeContractsAsync, data: batchId, isPending: isPendingBatch } = useWriteContracts();
-
-  // Regular fallback
-  const { writeContractAsync, data: hash, isPending: isPendingSingle } = useWriteContract();
+  const { writeContractAsync, data: hash, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const writePool = async (functionName: string, args: any[]) => {
-    if (capabilities) {
-      return writeContractsAsync({
-        contracts: [{
-          address: ARMINA_POOL_ADDRESS,
-          abi: ARMINA_POOL_ABI as any,
-          functionName,
-          args,
-        }],
-        capabilities,
-      } as any);
-    } else {
-      return writeContractAsync({
-        address: ARMINA_POOL_ADDRESS,
-        abi: ARMINA_POOL_ABI as any,
-        functionName,
-        args,
-      });
-    }
-  };
+  const writePool = (functionName: string, args: any[]) =>
+    writeContractAsync({
+      address: ARMINA_POOL_ADDRESS,
+      abi: ARMINA_POOL_ABI as any,
+      functionName,
+      args,
+      chainId: baseSepolia.id,
+    });
 
   const createPool = (monthlyAmount: bigint, poolSize: number) =>
     writePool('createPool', [monthlyAmount, poolSize]);
@@ -59,10 +40,10 @@ export function useArminaPool() {
     processPayment,
     claimSettlement,
     requestWinnerDraw,
-    isPending: isPendingSingle || isPendingBatch,
+    isPending,
     isConfirming,
     isSuccess,
-    hash: hash || batchId,
+    hash,
   };
 }
 
@@ -75,6 +56,7 @@ export function usePoolInfo(poolId: bigint) {
     abi: ARMINA_POOL_ABI as any,
     functionName: 'getPoolDetails',
     args: [poolId],
+    chainId: baseSepolia.id,
   });
 
   return {

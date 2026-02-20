@@ -1,9 +1,8 @@
 "use client";
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { useWriteContracts } from "wagmi/experimental";
+import { baseSepolia } from "wagmi/chains";
 import { IDRX_ABI, CONTRACTS } from "@/contracts/abis";
-import { usePaymasterCapabilities } from "./usePaymaster";
 
 export function useIDRXBalance(address: `0x${string}` | undefined) {
   return useReadContract({
@@ -13,6 +12,7 @@ export function useIDRXBalance(address: `0x${string}` | undefined) {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address && !!CONTRACTS.IDRX,
+      staleTime: 10_000,
     },
   });
 }
@@ -28,6 +28,7 @@ export function useIDRXAllowance(
     args: owner && spender ? [owner, spender] : undefined,
     query: {
       enabled: !!owner && !!spender && !!CONTRACTS.IDRX,
+      staleTime: 10_000,
     },
   });
 }
@@ -40,6 +41,7 @@ export function useCanClaimFaucet(address: `0x${string}` | undefined) {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address && !!CONTRACTS.IDRX,
+      staleTime: 10_000,
     },
   });
 }
@@ -52,88 +54,42 @@ export function useTimeUntilNextClaim(address: `0x${string}` | undefined) {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address && !!CONTRACTS.IDRX,
+      staleTime: 10_000,
     },
   });
 }
 
 export function useClaimFaucet() {
-  const capabilities = usePaymasterCapabilities();
-
-  // Use EIP-5792 writeContracts for paymaster support
-  const { writeContracts, data: id, isPending: isPendingBatch, error: batchError } = useWriteContracts();
-
-  // Fallback to regular writeContract when paymaster not available
-  const { writeContract, data: hash, isPending: isPendingSingle, error: singleError } = useWriteContract();
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const claimFaucet = () => {
     if (!CONTRACTS.IDRX) return;
-
-    if (capabilities) {
-      // Gasless via paymaster (EIP-5792)
-      writeContracts({
-        contracts: [{
-          address: CONTRACTS.IDRX,
-          abi: IDRX_ABI,
-          functionName: "faucet",
-        }],
-        capabilities,
-      } as any);
-    } else {
-      // Regular transaction
-      writeContract({
-        address: CONTRACTS.IDRX,
-        abi: IDRX_ABI,
-        functionName: "faucet",
-      });
-    }
+    writeContract({
+      address: CONTRACTS.IDRX,
+      abi: IDRX_ABI,
+      functionName: "faucet",
+      chainId: baseSepolia.id,
+    });
   };
 
-  return {
-    claimFaucet,
-    hash: hash || id,
-    isPending: isPendingSingle || isPendingBatch,
-    isConfirming,
-    isSuccess,
-    error: singleError || batchError,
-  };
+  return { claimFaucet, hash, isPending, isConfirming, isSuccess, error };
 }
 
 export function useApproveIDRX() {
-  const capabilities = usePaymasterCapabilities();
-  const { writeContracts, data: id, isPending: isPendingBatch, error: batchError } = useWriteContracts();
-  const { writeContract, data: hash, isPending: isPendingSingle, error: singleError } = useWriteContract();
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const approve = (spender: `0x${string}`, amount: bigint) => {
     if (!CONTRACTS.IDRX) return;
-
-    if (capabilities) {
-      writeContracts({
-        contracts: [{
-          address: CONTRACTS.IDRX,
-          abi: IDRX_ABI,
-          functionName: "approve",
-          args: [spender, amount],
-        }],
-        capabilities,
-      } as any);
-    } else {
-      writeContract({
-        address: CONTRACTS.IDRX,
-        abi: IDRX_ABI,
-        functionName: "approve",
-        args: [spender, amount],
-      });
-    }
+    writeContract({
+      address: CONTRACTS.IDRX,
+      abi: IDRX_ABI,
+      functionName: "approve",
+      args: [spender, amount],
+      chainId: baseSepolia.id,
+    });
   };
 
-  return {
-    approve,
-    hash: hash || id,
-    isPending: isPendingSingle || isPendingBatch,
-    isConfirming,
-    isSuccess,
-    error: singleError || batchError,
-  };
+  return { approve, hash, isPending, isConfirming, isSuccess, error };
 }

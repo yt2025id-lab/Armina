@@ -10,7 +10,7 @@ import { ListSkeleton } from "@/components/ui/LoadingSkeleton";
 import { useLanguage } from "@/components/providers";
 import { useAllPools, useParticipantInfo } from "@/hooks/usePoolData";
 import { useArminaPool } from "@/hooks/useArminaPool";
-import { useApproveIDRX } from "@/hooks/useIDRX";
+import { useApproveIDRX, useIDRXBalance } from "@/hooks/useIDRX";
 import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
 import { parseUnits } from "viem";
 import toast from "react-hot-toast";
@@ -34,6 +34,7 @@ export default function PoolPage() {
   const { joinPool, isPending: isJoining, isConfirming: isJoinConfirming } = useArminaPool();
   const { approve, isPending: isApproving } = useApproveIDRX();
   const { createPool, isPending: isCreating, isConfirming: isCreateConfirming } = useArminaPool();
+  const { data: userBalance } = useIDRXBalance(address);
 
   const isLoading = isJoining || isJoinConfirming || isApproving;
   const isCreateLoading = isCreating || isCreateConfirming || isApproving;
@@ -122,30 +123,36 @@ export default function PoolPage() {
         ))}
       </div>
 
-      {/* Pool List */}
-      <div className="space-y-4">
-        {isLoadingPools ? (
-          <ListSkeleton count={3} />
-        ) : (
-          <>
-            {activeTab === "open" && (
-              <>
+      {/* Pool Grid */}
+      {isLoadingPools ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <ListSkeleton count={8} />
+        </div>
+      ) : (
+        <>
+          {activeTab === "open" && (
+            openPools.length === 0 ? (
+              <EmptyState message="No open pools yet. Create one!" />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {openPools.map((pool) => (
                   <PoolCard
                     key={pool.id.toString()}
                     pool={pool}
                     onJoin={() => handleJoinPool(pool)}
                     isConnected={isConnected}
+                    userBalance={userBalance}
                   />
                 ))}
-                {openPools.length === 0 && (
-                  <EmptyState message="No open pools yet. Create one!" />
-                )}
-              </>
-            )}
+              </div>
+            )
+          )}
 
-            {activeTab === "active" && (
-              <>
+          {activeTab === "active" && (
+            activePools.length === 0 ? (
+              <EmptyState message="No active pools yet" />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {activePools.map((pool) => (
                   <ActivePoolCard
                     key={pool.id.toString()}
@@ -153,14 +160,15 @@ export default function PoolPage() {
                     userAddress={address}
                   />
                 ))}
-                {activePools.length === 0 && (
-                  <EmptyState message="No active pools yet" />
-                )}
-              </>
-            )}
+              </div>
+            )
+          )}
 
-            {activeTab === "completed" && (
-              <>
+          {activeTab === "completed" && (
+            completedPools.length === 0 ? (
+              <EmptyState message="No completed pools yet" />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {completedPools.map((pool) => (
                   <CompletedPoolCard
                     key={pool.id.toString()}
@@ -168,94 +176,140 @@ export default function PoolPage() {
                     userAddress={address}
                   />
                 ))}
-                {completedPools.length === 0 && (
-                  <EmptyState message="No completed pools yet" />
-                )}
-              </>
-            )}
-          </>
-        )}
-      </div>
+              </div>
+            )
+          )}
+        </>
+      )}
 
       {/* Join Pool Modal */}
-      {showJoinModal && selectedPool && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => {
-              setShowJoinModal(false);
-              setSelectedPool(null);
-            }}
-          />
-          <div className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl p-6">
-            <h2 className="text-xl font-bold text-slate-900 mb-1">
-              {t.joinPool}
-            </h2>
-            <p className="text-slate-500 text-sm mb-6">
-              {t.reviewPoolDetails}
-            </p>
+      {showJoinModal && selectedPool && (() => {
+        const collateral = calculateCollateral(selectedPool.contribution, selectedPool.maxParticipants);
+        const totalNeeded = collateral + selectedPool.contribution;
+        const canAfford = userBalance !== undefined && userBalance >= totalNeeded;
+        const shortfall = userBalance !== undefined && userBalance < totalNeeded
+          ? totalNeeded - userBalance
+          : 0n;
 
-            <div className="space-y-4 mb-6">
-              <div className="p-4 bg-slate-50 rounded-xl space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">{t.poolTier}</span>
-                  <span className="font-semibold text-slate-900">
-                    {POOL_TIERS[selectedPool.tier].nameId}
-                  </span>
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => {
+                setShowJoinModal(false);
+                setSelectedPool(null);
+              }}
+            />
+            <div className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl p-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-1">
+                {t.joinPool}
+              </h2>
+              <p className="text-slate-500 text-sm mb-4">
+                {t.reviewPoolDetails}
+              </p>
+
+              <div className="space-y-3 mb-4">
+                {/* Pool details */}
+                <div className="p-4 bg-slate-50 rounded-xl space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">{t.poolTier}</span>
+                    <span className="font-semibold text-slate-900">
+                      {POOL_TIERS[selectedPool.tier].nameId}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">{t.participants}</span>
+                    <span className="font-semibold text-slate-900">
+                      {selectedPool.currentParticipants}/{selectedPool.maxParticipants}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">{t.duration}</span>
+                    <span className="font-semibold text-slate-900">
+                      {selectedPool.maxParticipants} {t.months}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">{t.contributionMonth}</span>
-                  <span className="font-semibold text-slate-900">
-                    {formatIDRX(selectedPool.contribution)}
-                  </span>
+
+                {/* Payment breakdown */}
+                <div className="p-4 bg-slate-50 rounded-xl space-y-2">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                    Rincian Biaya Join
+                  </p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Iuran bulan pertama</span>
+                    <span className="font-semibold text-slate-900">
+                      {formatIDRX(selectedPool.contribution)} IDRX
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Jaminan (dikembalikan)</span>
+                    <span className="font-semibold text-amber-600">
+                      {formatIDRX(collateral)} IDRX
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm font-bold border-t border-slate-200 pt-2 mt-1">
+                    <span className="text-slate-900">Total yang dibutuhkan</span>
+                    <span className="text-[#1e2a4a] text-base">
+                      {formatIDRX(totalNeeded)} IDRX
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">{t.participants}</span>
-                  <span className="font-semibold text-slate-900">
-                    {selectedPool.currentParticipants}/{selectedPool.maxParticipants}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">{t.duration}</span>
-                  <span className="font-semibold text-slate-900">
-                    {selectedPool.maxParticipants} {t.months}
-                  </span>
+
+                {/* Balance status */}
+                <div className={`p-4 rounded-xl border ${canAfford ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-semibold text-slate-700">Balance kamu</span>
+                    <span className={`text-sm font-bold ${canAfford ? "text-green-700" : "text-red-700"}`}>
+                      {userBalance !== undefined ? `${formatIDRX(userBalance)} IDRX` : "—"}
+                    </span>
+                  </div>
+                  {userBalance !== undefined && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {canAfford ? (
+                        <>
+                          <span className="text-green-600 text-base">✓</span>
+                          <span className="text-green-700 text-xs font-medium">
+                            Balance cukup — kamu bisa join pool ini
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-red-600 text-base">✗</span>
+                          <span className="text-red-700 text-xs font-medium">
+                            Kurang {formatIDRX(shortfall as bigint)} IDRX — claim faucet dulu
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                <p className="text-amber-800 font-semibold text-sm mb-1">{t.collateralRequired}</p>
-                <p className="text-amber-900 text-xl font-bold">
-                  {formatIDRX(calculateCollateral(selectedPool.contribution, selectedPool.maxParticipants))}
-                </p>
-                <p className="text-amber-700 text-xs mt-1">
-                  {t.willBeReturned}
-                </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowJoinModal(false);
+                    setSelectedPool(null);
+                  }}
+                >
+                  {t.cancel}
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={confirmJoinPool}
+                  isLoading={isLoading}
+                  disabled={isLoading || (userBalance !== undefined && !canAfford)}
+                >
+                  {userBalance !== undefined && !canAfford ? "Balance Tidak Cukup" : t.confirmJoin}
+                </Button>
               </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() => {
-                  setShowJoinModal(false);
-                  setSelectedPool(null);
-                }}
-              >
-                {t.cancel}
-              </Button>
-              <Button
-                className="flex-1"
-                onClick={confirmJoinPool}
-                isLoading={isLoading}
-              >
-                {t.confirmJoin}
-              </Button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
@@ -265,65 +319,90 @@ function PoolCard({
   pool,
   onJoin,
   isConnected,
+  userBalance,
 }: {
   pool: Pool;
   onJoin: () => void;
   isConnected: boolean;
+  userBalance?: bigint;
 }) {
   const tierConfig = POOL_TIERS[pool.tier];
-  const collateral = calculateCollateral(
-    pool.contribution,
-    pool.maxParticipants
-  );
-  const progress =
-    (pool.currentParticipants / pool.maxParticipants) * 100;
+  const collateral = calculateCollateral(pool.contribution, pool.maxParticipants);
+  const totalNeeded = collateral + pool.contribution;
+  const progress = (pool.currentParticipants / pool.maxParticipants) * 100;
+  const canAfford = isConnected && userBalance !== undefined && userBalance >= totalNeeded;
+  const cannotAfford = isConnected && userBalance !== undefined && userBalance < totalNeeded;
 
   return (
-    <div className="p-5 border border-slate-200 rounded-2xl space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="font-semibold text-slate-900">{tierConfig.nameId}</p>
-        <span className="px-3 py-1 bg-[#1e2a4a]/5 text-[#1e2a4a] text-xs font-medium rounded-full">
-          Open
-        </span>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">Contribution/Month</span>
-          <span className="font-semibold text-slate-900">
-            {formatIDRX(pool.contribution)}
+    <div className={`flex flex-col p-4 border rounded-2xl hover:shadow-md transition-all ${
+      cannotAfford
+        ? "border-red-200 bg-red-50/30"
+        : canAfford
+        ? "border-green-200 hover:border-green-300"
+        : "border-slate-200 hover:border-[#1e2a4a]/40"
+    }`}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="font-semibold text-slate-900 text-sm">{tierConfig.nameId}</p>
+        <div className="flex items-center gap-1.5">
+          {canAfford && (
+            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+              ✓ Bisa join
+            </span>
+          )}
+          {cannotAfford && (
+            <span className="px-1.5 py-0.5 bg-red-100 text-red-600 text-xs font-semibold rounded-full">
+              ✗ Kurang
+            </span>
+          )}
+          <span className="px-2 py-0.5 bg-[#1e2a4a]/5 text-[#1e2a4a] text-xs font-medium rounded-full">
+            Open
           </span>
         </div>
+      </div>
 
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">Participants</span>
-          <span className="font-semibold text-slate-900">
+      {/* Contribution — info utama */}
+      <p className="text-xs text-slate-400 mb-0.5">Iuran/bulan</p>
+      <p className="text-lg font-bold text-slate-900 mb-3">
+        {formatIDRX(pool.contribution)} IDRX
+      </p>
+
+      {/* Progress bar */}
+      <div className="mb-1">
+        <div className="flex justify-between text-xs text-slate-500 mb-1">
+          <span>Peserta</span>
+          <span className="font-medium text-slate-700">
             {pool.currentParticipants}/{pool.maxParticipants}
           </span>
         </div>
-
-        <div className="w-full bg-slate-100 rounded-full h-2">
+        <div className="w-full bg-slate-100 rounded-full h-1.5">
           <div
-            className="bg-[#1e2a4a] h-2 rounded-full transition-all"
+            className="bg-[#1e2a4a] h-1.5 rounded-full transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
-
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">Cycle</span>
-          <span className="font-semibold text-slate-900">{tierConfig.cycleDays} days</span>
-        </div>
-
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">Collateral</span>
-          <span className="font-semibold text-amber-600">
-            {formatIDRX(collateral)}
-          </span>
-        </div>
       </div>
 
-      <Button className="w-full" onClick={onJoin} disabled={!isConnected}>
-        {isConnected ? "Join Pool" : "Connect Wallet to Join"}
+      {/* Total needed to join */}
+      <div className="mt-3 mb-2 p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+        <p className="text-xs text-slate-400 mb-0.5">Total untuk join</p>
+        <p className="text-sm font-bold text-[#1e2a4a]">
+          {formatIDRX(totalNeeded)} IDRX
+        </p>
+        <p className="text-xs text-slate-400 mt-0.5">
+          Jaminan {formatIDRX(collateral)} + iuran {formatIDRX(pool.contribution)}
+        </p>
+      </div>
+
+      {/* Pool ID */}
+      <p className="text-xs text-slate-400 mb-3">#{pool.id.toString()} · {tierConfig.cycleDays}-day cycle</p>
+
+      <Button
+        className="w-full mt-auto text-sm py-2"
+        onClick={onJoin}
+        disabled={!isConnected}
+      >
+        {!isConnected ? "Connect Wallet" : "Join Pool"}
       </Button>
     </div>
   );
@@ -342,70 +421,55 @@ function ActivePoolCard({
   const { data: participant } = useParticipantInfo(pool.id, userAddress);
 
   return (
-    <div className="p-5 border-2 border-[#1e2a4a] rounded-2xl space-y-4 bg-[#1e2a4a]/5">
-      <div className="flex items-center justify-between">
-        <p className="font-semibold text-slate-900">{tierConfig.nameId}</p>
-        <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+    <div className="flex flex-col p-4 border-2 border-[#1e2a4a] rounded-2xl bg-[#1e2a4a]/5 hover:shadow-md transition-all">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="font-semibold text-slate-900 text-sm">{tierConfig.nameId}</p>
+        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
           Active
         </span>
       </div>
 
-      {/* Round Progress */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">Round</span>
-          <span className="font-semibold text-slate-900">
+      {/* Contribution */}
+      <p className="text-xs text-slate-400 mb-0.5">Contribution/month</p>
+      <p className="text-lg font-bold text-slate-900 mb-3">
+        {formatIDRX(pool.contribution)}
+      </p>
+
+      {/* Round progress */}
+      <div className="mb-3">
+        <div className="flex justify-between text-xs text-slate-500 mb-1">
+          <span>Round</span>
+          <span className="font-medium text-slate-700">
             {pool.currentRound}/{pool.totalRounds}
           </span>
         </div>
-        <div className="w-full bg-slate-200 rounded-full h-2">
+        <div className="w-full bg-slate-200 rounded-full h-1.5">
           <div
-            className="bg-green-500 h-2 rounded-full transition-all"
+            className="bg-green-500 h-1.5 rounded-full transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">Contribution/Month</span>
-          <span className="font-semibold text-slate-900">
-            {formatIDRX(pool.contribution)}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">Participants</span>
-          <span className="font-semibold text-slate-900">
-            {pool.currentParticipants} people
-          </span>
-        </div>
-
-        {/* Win Status - real data */}
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">Win Status</span>
-          {participant?.hasWon ? (
-            <span className="font-semibold text-green-600">Won!</span>
-          ) : (
-            <span className="font-semibold text-slate-400">Not won yet</span>
-          )}
-        </div>
-
-        {/* Collateral info */}
-        {participant && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-500">Missed Payments</span>
-            <span className={`font-semibold ${participant.missedPayments > 0 ? "text-red-600" : "text-green-600"}`}>
-              {participant.missedPayments === 0 ? "Perfect record" : `${participant.missedPayments} missed`}
-            </span>
-          </div>
+      {/* Stats */}
+      <div className="flex justify-between text-xs text-slate-500 mb-2">
+        <span>{pool.currentParticipants} participants</span>
+        {participant?.hasWon ? (
+          <span className="text-green-600 font-semibold">Won!</span>
+        ) : (
+          <span className="text-slate-400">Not won yet</span>
         )}
       </div>
 
-      <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-center">
-        <p className="text-green-700 text-sm font-medium">
-          Pool ID: #{pool.id.toString()}
+      {participant && participant.missedPayments > 0 && (
+        <p className="text-xs text-red-500 mb-2">
+          {participant.missedPayments} missed payment{participant.missedPayments > 1 ? "s" : ""}
         </p>
+      )}
+
+      <div className="mt-auto pt-2 border-t border-[#1e2a4a]/10">
+        <p className="text-xs text-slate-400">#{pool.id.toString()}</p>
       </div>
     </div>
   );
@@ -423,60 +487,53 @@ function CompletedPoolCard({
   const { data: participant } = useParticipantInfo(pool.id, userAddress);
 
   return (
-    <div className="p-5 border border-slate-200 rounded-2xl space-y-4 bg-slate-50">
-      <div className="flex items-center justify-between">
-        <p className="font-semibold text-slate-900">{tierConfig.nameId}</p>
-        <span className="px-3 py-1 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">
+    <div className="flex flex-col p-4 border border-slate-200 rounded-2xl bg-slate-50 hover:shadow-md transition-all">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="font-semibold text-slate-900 text-sm">{tierConfig.nameId}</p>
+        <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">
           Completed
         </span>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">Total Rounds</span>
-          <span className="font-semibold text-slate-900">
-            {pool.totalRounds} rounds
-          </span>
-        </div>
+      {/* Contribution */}
+      <p className="text-xs text-slate-400 mb-0.5">Contribution/month</p>
+      <p className="text-lg font-bold text-slate-900 mb-3">
+        {formatIDRX(pool.contribution)}
+      </p>
 
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">Participants</span>
-          <span className="font-semibold text-slate-900">
-            {pool.currentParticipants} people
-          </span>
-        </div>
-
-        {participant && (
-          <>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-500">Won</span>
-              <span className={`font-semibold ${participant.hasWon ? "text-green-600" : "text-slate-400"}`}>
-                {participant.hasWon ? "Yes" : "No"}
-              </span>
-            </div>
-
-            <div className="border-t border-slate-200 pt-3 mt-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">Pot Received</span>
-                <span className="font-bold text-slate-900">
-                  {formatIDRX(participant.potReceived)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-slate-500">Yield Earned</span>
-                <span className="font-semibold text-green-600">
-                  +{formatIDRX(participant.collateralYieldEarned)}
-                </span>
-              </div>
-            </div>
-          </>
-        )}
+      {/* Stats */}
+      <div className="flex justify-between text-xs text-slate-500 mb-3">
+        <span>{pool.totalRounds} rounds</span>
+        <span>{pool.currentParticipants} participants</span>
       </div>
 
-      <div className="p-3 bg-green-50 border border-green-200 rounded-xl">
-        <p className="text-green-700 text-sm text-center">
-          Pool #{pool.id.toString()} completed
-        </p>
+      {/* Participant results */}
+      {participant && (
+        <div className="space-y-1.5 pt-2 border-t border-slate-200">
+          <div className="flex justify-between text-xs">
+            <span className="text-slate-500">Won</span>
+            <span className={`font-semibold ${participant.hasWon ? "text-green-600" : "text-slate-400"}`}>
+              {participant.hasWon ? "Yes" : "No"}
+            </span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-slate-500">Pot received</span>
+            <span className="font-semibold text-slate-900">
+              {formatIDRX(participant.potReceived)}
+            </span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-slate-500">Yield earned</span>
+            <span className="font-semibold text-green-600">
+              +{formatIDRX(participant.collateralYieldEarned)}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-auto pt-2">
+        <p className="text-xs text-slate-400">#{pool.id.toString()}</p>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ const path = require("path");
 /**
  * Deploy IDRX Mock Token for Testing
  * Uses 2 decimals to match IDR denomination
- * Faucet: 500,000 IDRX per claim, 1 day cooldown
+ * Faucet: 500,000 IDRX per claim, no cooldown
  */
 async function main() {
   console.log("Deploying IDRX Mock Token (500K faucet)...\n");
@@ -22,7 +22,7 @@ async function main() {
 
   console.log("\n✅ IDRX Token deployed to:", idrxAddress);
   console.log("Faucet amount: 500,000 IDRX per claim");
-  console.log("Cooldown: 1 day");
+  console.log("Cooldown: none");
 
   console.log("\n📌 Next Steps:");
   console.log("==============");

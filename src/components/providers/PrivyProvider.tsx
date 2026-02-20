@@ -22,6 +22,7 @@ const wagmiConfig = createConfig({
       process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || "https://sepolia.base.org"
     ),
   },
+  ssr: true,
 });
 
 export function PrivyProvider({ children }: { children: ReactNode }) {

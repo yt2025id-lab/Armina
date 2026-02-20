@@ -70,7 +70,7 @@ export default function CreatePoolPage() {
 
   // Auto-create pool after approval succeeds
   useEffect(() => {
-    if (approveSuccess && !isPending && !isSuccess) {
+    if (approveSuccess && !isPending && !isConfirming && !isSuccess) {
       const createPoolAfterApproval = async () => {
         try {
           toast.success("Approval confirmed!", { id: "approve" });
@@ -85,13 +85,13 @@ export default function CreatePoolPage() {
       };
       createPoolAfterApproval();
     }
-  }, [approveSuccess, isPending, isSuccess, finalAmount, poolSize, createPool]);
+  }, [approveSuccess, isPending, isConfirming, isSuccess, finalAmount, poolSize, createPool]);
 
   // Navigate after successful pool creation
   useEffect(() => {
     if (isSuccess) {
       toast.success("Pool created successfully!", { id: "create" });
-      const timer = setTimeout(() => router.push("/pools"), 1500);
+      const timer = setTimeout(() => router.push("/pool"), 1500);
       return () => clearTimeout(timer);
     }
   }, [isSuccess, router]);

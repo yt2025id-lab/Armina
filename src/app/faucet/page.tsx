@@ -5,39 +5,54 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { formatUnits } from "viem";
 import toast from "react-hot-toast";
+import { useChainId, useSwitchChain } from "wagmi";
+import { baseSepolia } from "wagmi/chains";
 import { useClaimFaucet, useIDRXBalance } from "@/hooks/useIDRX";
 import { useLanguage } from "@/components/providers";
 
 export default function FaucetPage() {
   const router = useRouter();
   const { address, isConnected } = useAuth();
-  const { claimFaucet, isPending, isConfirming, isSuccess } = useClaimFaucet();
+  const { claimFaucet, isPending, isConfirming, isSuccess, error } = useClaimFaucet();
   const { data: balance, refetch } = useIDRXBalance(address);
   const [lastClaimed, setLastClaimed] = useState<Date | null>(null);
   const { t } = useLanguage();
+  const chainId = useChainId();
+  const { switchChain, switchChainAsync, isPending: isSwitching } = useSwitchChain();
+  const isWrongNetwork = isConnected && chainId !== baseSepolia.id;
 
-  // Refetch balance when claim is successful
   useEffect(() => {
     if (isSuccess) {
+      toast.dismiss("claim");
       toast.success(t.claimSuccess);
       refetch();
       setLastClaimed(new Date());
     }
   }, [isSuccess, refetch, t.claimSuccess]);
 
-  const handleClaim = () => {
+  useEffect(() => {
+    if (error) {
+      toast.dismiss("claim");
+      const msg = (error as any)?.shortMessage || (error as any)?.message || "Failed to claim IDRX";
+      toast.error(msg);
+    }
+  }, [error]);
+
+  const handleClaim = async () => {
     if (!isConnected) {
       toast.error("Please connect your wallet first");
       return;
     }
-
-    try {
-      toast.loading("Claiming IDRX from faucet...", { id: "claim" });
-      claimFaucet();
-    } catch (error) {
-      console.error("Error claiming from faucet:", error);
-      toast.error("Failed to claim IDRX. Please try again.", { id: "claim" });
+    if (chainId !== baseSepolia.id) {
+      try {
+        await switchChainAsync({ chainId: baseSepolia.id });
+      } catch {
+        toast.error("Switch to Base Sepolia first");
+        return;
+      }
     }
+    toast.loading("Claiming IDRX from faucet...", { id: "claim" });
+    claimFaucet();
   };
 
   const formatBalance = (bal: bigint | undefined) => {
@@ -83,7 +98,7 @@ export default function FaucetPage() {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between items-center">
               <span className="text-slate-600">{t.amountPerClaim}</span>
-              <span className="font-semibold text-[#1e2a4a]">500,000 IDRX</span>
+              <span className="font-semibold text-[#1e2a4a]">500.000 IDRX</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-600">{t.network}</span>
@@ -104,20 +119,39 @@ export default function FaucetPage() {
         {lastClaimed && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
             <p className="text-sm text-green-800">
-              ✓ Successfully claimed 500,000 IDRX at{" "}
+              ✓ Successfully claimed 500.000 IDRX at{" "}
               {lastClaimed.toLocaleTimeString()}
             </p>
+          </div>
+        )}
+
+        {/* Wrong Network Warning */}
+        {isWrongNetwork && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-red-800">Wrong Network</p>
+              <p className="text-xs text-red-600">Switch to Base Sepolia to continue.</p>
+            </div>
+            <button
+              onClick={() => switchChain({ chainId: baseSepolia.id })}
+              disabled={isSwitching}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50"
+            >
+              {isSwitching ? "Switching..." : "Switch Network"}
+            </button>
           </div>
         )}
 
         {/* Claim Button */}
         <button
           onClick={handleClaim}
-          disabled={!isConnected || isPending || isConfirming}
+          disabled={!isConnected || isSwitching || isPending || isConfirming}
           className="w-full py-4 px-6 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] text-white rounded-xl font-bold hover:from-[#2a3a5c] hover:to-[#1e2a4a] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mb-4"
         >
           {!isConnected
             ? t.connectToClaim
+            : isSwitching
+            ? "Switching Network..."
             : isPending
             ? t.claiming
             : isConfirming
@@ -181,7 +215,7 @@ export default function FaucetPage() {
                 {t.createPool}
               </button>
               <button
-                onClick={() => router.push("/pools")}
+                onClick={() => router.push("/pool")}
                 className="flex-1 py-3 bg-white hover:bg-slate-50 text-green-600 border-2 border-green-600 rounded-xl font-semibold"
               >
                 {t.browsePools}

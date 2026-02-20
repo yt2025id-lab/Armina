@@ -12,7 +12,8 @@ import {
 import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity";
 import { ConnectButton } from "./ConnectButton";
 import { useAuth } from "@/hooks/useAuth";
-import { useBalance } from "wagmi";
+import { useBalance, useChainId, useSwitchChain } from "wagmi";
+import { baseSepolia } from "wagmi/chains";
 
 const navItems = [
   {
@@ -101,7 +102,11 @@ export function Header() {
   const { data: balance, isLoading } = useIDRXBalance(address);
   const { data: ethBalance } = useBalance({
     address: address,
+    chainId: baseSepolia.id,
   });
+  const chainId = useChainId();
+  const { switchChain, isPending: isSwitching } = useSwitchChain();
+  const isWrongNetwork = isUserConnected && !!address && chainId !== baseSepolia.id;
 
   const formatBalance = (bal: bigint | undefined) => {
     if (!bal) return "0";
@@ -128,9 +133,9 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#1e2a4a] text-white shadow-lg">
+    <header className="sticky top-0 z-40 bg-[#1e2a4a] text-white shadow-lg pt-safe">
       <div className="w-full mx-auto px-4 md:px-8 h-18 py-2 flex items-center justify-between relative">
-        
+
 
         {/* Center - Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
@@ -198,8 +203,20 @@ export function Header() {
 
         {/* Right Side - Balance & Wallet */}
         <div className="flex items-center gap-3 ml-auto">
+          {/* Wrong Network Badge */}
+          {isWrongNetwork && (
+            <button
+              onClick={() => switchChain({ chainId: baseSepolia.id })}
+              disabled={isSwitching}
+              className="flex items-center gap-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg disabled:opacity-60 transition-colors"
+            >
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              {isSwitching ? "Switching..." : "Wrong Network"}
+            </button>
+          )}
+
           {/* ETH & IDRX Balance - 2 Columns */}
-          {isUserConnected && address && (
+          {isUserConnected && address && !isWrongNetwork && (
             <div className="flex items-center bg-white/10 rounded-lg overflow-hidden divide-x divide-white/20">
               {/* ETH Balance Column */}
               <div className="flex items-center gap-2 px-4 py-2">

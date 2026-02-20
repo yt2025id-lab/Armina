@@ -1,11 +1,10 @@
 "use client";
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { useWriteContracts } from "wagmi/experimental";
+import { baseSepolia } from "wagmi/chains";
 import { ARMINA_REPUTATION_ABI, CONTRACTS } from "@/contracts/abis";
 import { ReputationLevel } from "@/types";
 import { getReputationLevel } from "@/lib/constants";
-import { usePaymasterCapabilities } from "./usePaymaster";
 
 export function useHasReputation(address: `0x${string}` | undefined) {
   return useReadContract({
@@ -15,6 +14,7 @@ export function useHasReputation(address: `0x${string}` | undefined) {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address && !!CONTRACTS.REPUTATION,
+      staleTime: 60_000, // 1 minute
     },
   });
 }
@@ -27,21 +27,22 @@ export function useReputationData(address: `0x${string}` | undefined) {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address && !!CONTRACTS.REPUTATION,
+      staleTime: 60_000, // 1 minute
     },
   });
 
   // Transform the data
   const reputation = data
     ? {
-        score: Number(data.score),
-        level: getReputationLevel(Number(data.score)) as ReputationLevel,
-        totalPoolsCompleted: Number(data.totalPoolsCompleted),
-        totalPoolsJoined: Number(data.totalPoolsJoined),
-        onTimePayments: Number(data.onTimePayments),
-        latePayments: Number(data.latePayments),
-        defaults: Number(data.defaults),
-        lastUpdated: data.lastUpdated,
-      }
+      score: Number(data.score),
+      level: getReputationLevel(Number(data.score)) as ReputationLevel,
+      totalPoolsCompleted: Number(data.totalPoolsCompleted),
+      totalPoolsJoined: Number(data.totalPoolsJoined),
+      onTimePayments: Number(data.onTimePayments),
+      latePayments: Number(data.latePayments),
+      defaults: Number(data.defaults),
+      lastUpdated: data.lastUpdated,
+    }
     : null;
 
   return { data: reputation, ...rest };
@@ -55,6 +56,7 @@ export function useReputationLevel(address: `0x${string}` | undefined) {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address && !!CONTRACTS.REPUTATION,
+      staleTime: 60_000, // 1 minute
     },
   });
 }
@@ -67,43 +69,24 @@ export function useCollateralDiscount(address: `0x${string}` | undefined) {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address && !!CONTRACTS.REPUTATION,
+      staleTime: 60_000, // 1 minute
     },
   });
 }
 
 export function useMintReputation() {
-  const capabilities = usePaymasterCapabilities();
-  const { writeContracts, data: batchId, isPending: isPendingBatch, error: batchError } = useWriteContracts();
-  const { writeContract, data: hash, isPending: isPendingSingle, error: singleError } = useWriteContract();
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const mint = () => {
     if (!CONTRACTS.REPUTATION) return;
-
-    if (capabilities) {
-      writeContracts({
-        contracts: [{
-          address: CONTRACTS.REPUTATION,
-          abi: ARMINA_REPUTATION_ABI,
-          functionName: "mint",
-        }],
-        capabilities,
-      } as any);
-    } else {
-      writeContract({
-        address: CONTRACTS.REPUTATION,
-        abi: ARMINA_REPUTATION_ABI,
-        functionName: "mint",
-      });
-    }
+    writeContract({
+      address: CONTRACTS.REPUTATION,
+      abi: ARMINA_REPUTATION_ABI,
+      functionName: "mint",
+      chainId: baseSepolia.id,
+    });
   };
 
-  return {
-    mint,
-    hash: hash || batchId,
-    isPending: isPendingSingle || isPendingBatch,
-    isConfirming,
-    isSuccess,
-    error: singleError || batchError,
-  };
+  return { mint, hash, isPending, isConfirming, isSuccess, error };
 }

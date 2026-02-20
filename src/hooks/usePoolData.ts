@@ -4,6 +4,7 @@ import { useReadContract, useReadContracts } from "wagmi";
 import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
 import { ARMINA_POOL_ABI } from "@/contracts/abis";
 import { Pool } from "@/types";
+import { useMemo } from "react";
 
 const abi = ARMINA_POOL_ABI;
 const address = ARMINA_POOL_ADDRESS;
@@ -16,7 +17,10 @@ export function usePoolCounter() {
     address,
     abi,
     functionName: "poolCounter",
-    query: { enabled: !!address },
+    query: {
+      enabled: !!address && typeof window !== 'undefined',
+      staleTime: 30_000, // 30 seconds
+    },
   });
 }
 
@@ -29,35 +33,38 @@ export function usePoolDetails(poolId: bigint | undefined) {
     abi,
     functionName: "getPoolDetails",
     args: poolId !== undefined ? [poolId] : undefined,
-    query: { enabled: poolId !== undefined && !!address },
+    query: {
+      enabled: poolId !== undefined && !!address && typeof window !== 'undefined',
+      staleTime: 30_000, // 30 seconds
+    },
   });
 
   const pool: Pool | null =
     data && poolId !== undefined
       ? {
-          id: poolId,
-          address: address,
-          tier:
-            Number((data as any)[2]) <= 5
-              ? "small"
-              : Number((data as any)[2]) <= 10
+        id: poolId,
+        address: address,
+        tier:
+          Number((data as any)[2]) <= 5
+            ? "small"
+            : Number((data as any)[2]) <= 10
               ? "medium"
               : "large",
-          contribution: (data as any)[1] as bigint,
-          collateralRequired:
-            (((data as any)[1] as bigint) *
-              BigInt(Number((data as any)[2])) *
-              BigInt(125)) /
-            BigInt(100),
-          maxParticipants: Number((data as any)[2]),
-          currentParticipants: Number((data as any)[4]),
-          currentRound: Number((data as any)[7]),
-          totalRounds: Number((data as any)[2]),
-          startTime: (data as any)[6] as bigint,
-          isActive: Number((data as any)[5]) === 2, // PoolStatus.Active
-          isCompleted: Number((data as any)[5]) === 3, // PoolStatus.Completed
-          creator: "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        }
+        contribution: (data as any)[1] as bigint,
+        collateralRequired:
+          (((data as any)[1] as bigint) *
+            BigInt(Number((data as any)[2])) *
+            BigInt(125)) /
+          BigInt(100),
+        maxParticipants: Number((data as any)[2]),
+        currentParticipants: Number((data as any)[4]),
+        currentRound: Number((data as any)[7]),
+        totalRounds: Number((data as any)[2]),
+        startTime: (data as any)[6] as bigint,
+        isActive: Number((data as any)[5]) === 2, // PoolStatus.Active
+        isCompleted: Number((data as any)[5]) === 3, // PoolStatus.Completed
+        creator: "0x0000000000000000000000000000000000000000" as `0x${string}`,
+      }
       : null;
 
   return { data: pool, raw: data, ...rest };
@@ -67,64 +74,102 @@ export function usePoolDetails(poolId: bigint | undefined) {
  * Fetch all pools by iterating poolCounter
  * Returns categorized pools: open, active, completed
  */
+/**
+ * Fetch pools with optimization (only recent ones)
+ * Limit to last 30 pools to prevent OOM
+ */
 export function useAllPools() {
   const { data: poolCount, isLoading: isCountLoading } = usePoolCounter();
   const count = poolCount ? Number(poolCount as bigint) : 0;
 
-  // Build array of contract calls for each pool
-  const contracts = Array.from({ length: count }, (_, i) => ({
-    address: address as `0x${string}`,
-    abi: abi as any,
-    functionName: "getPoolDetails" as const,
-    args: [BigInt(i + 1)],
-  }));
+  // Heuristic: Fetch only the last 10 pools to avoid OOM
+  const FETCH_LIMIT = 10;
+
+  // Memoize contracts to prevent shallow comparison issues in useReadContracts or re-renders
+  const contracts = useMemo(() => {
+    const startIdx = Math.max(0, count - FETCH_LIMIT);
+
+    // Create an array of IDs to fetch: [count, count-1, ..., startIdx+1]
+    const ids: bigint[] = [];
+    for (let i = count; i > startIdx; i--) {
+      ids.push(BigInt(i));
+    }
+
+    return ids.map(id => ({
+      address: address as `0x${string}`,
+      abi: abi as any,
+      functionName: "getPoolDetails" as const,
+      args: [id],
+    }));
+  }, [count, address]); // added address dep just in case
 
   const { data: poolsData, isLoading: isPoolsLoading, refetch } = useReadContracts({
     contracts: contracts.length > 0 ? contracts : undefined,
-    query: { enabled: count > 0 },
+    query: {
+      enabled: count > 0 && typeof window !== 'undefined',
+      staleTime: 30_000, // 30 seconds
+    },
   });
 
-  const pools: Pool[] = [];
-  if (poolsData) {
-    for (let i = 0; i < poolsData.length; i++) {
-      const result = poolsData[i];
-      if (result.status === "success" && result.result) {
-        const d = result.result as any;
-        const poolSize = Number(d[2]);
-        const statusEnum = Number(d[5]);
-        pools.push({
-          id: BigInt(i + 1),
-          address: address,
-          tier: poolSize <= 5 ? "small" : poolSize <= 10 ? "medium" : "large",
-          contribution: d[1] as bigint,
-          collateralRequired:
-            ((d[1] as bigint) * BigInt(poolSize) * BigInt(125)) / BigInt(100),
-          maxParticipants: poolSize,
-          currentParticipants: Number(d[4]),
-          currentRound: Number(d[7]),
-          totalRounds: poolSize,
-          startTime: d[6] as bigint,
-          isActive: statusEnum === 2,
-          isCompleted: statusEnum === 3,
-          creator: "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        });
+  // Memoize the derived data and return object
+  return useMemo(() => {
+    const pools: Pool[] = [];
+
+    if (poolsData) {
+      // Re-calculate the IDs corresponding to the fetched data
+      // Must match the logic in contracts creation
+      const startIdx = Math.max(0, count - FETCH_LIMIT);
+      const ids: bigint[] = [];
+      for (let i = count; i > startIdx; i--) {
+        ids.push(BigInt(i));
       }
+
+      poolsData.forEach((result, index) => {
+        if (result.status === "success" && result.result) {
+          const d = result.result as any;
+          const poolSize = Number(d[2]);
+          const statusEnum = Number(d[5]);
+          const id = ids[index]; // Map back to ID
+
+          pools.push({
+            id: id,
+            address: address as `0x${string}`,
+            tier: poolSize <= 5 ? "small" : poolSize <= 10 ? "medium" : "large",
+            contribution: d[1] as bigint,
+            collateralRequired:
+              ((d[1] as bigint) * BigInt(poolSize) * BigInt(125)) / BigInt(100),
+            maxParticipants: poolSize,
+            currentParticipants: Number(d[4]),
+            currentRound: Number(d[7]),
+            totalRounds: poolSize,
+            startTime: d[6] as bigint,
+            isActive: statusEnum === 2,
+            isCompleted: statusEnum === 3,
+            creator: "0x0000000000000000000000000000000000000000" as `0x${string}`,
+          });
+        }
+      });
     }
-  }
 
-  const openPools = pools.filter((p) => !p.isActive && !p.isCompleted && p.currentParticipants < p.maxParticipants);
-  const activePools = pools.filter((p) => p.isActive && !p.isCompleted);
-  const completedPools = pools.filter((p) => p.isCompleted);
+    // Filter according to user request:
+    // "active saja dan mengambil 3 data yang sudah tertutup 3 terakhir"
+    // We interpret "active" as Open + Active (running).
+    // completedPools should be limited to 3.
 
-  return {
-    pools,
-    openPools,
-    activePools,
-    completedPools,
-    poolCount: count,
-    isLoading: isCountLoading || isPoolsLoading,
-    refetch,
-  };
+    const openPools = pools.filter((p) => !p.isActive && !p.isCompleted && p.currentParticipants < p.maxParticipants);
+    const activePools = pools.filter((p) => p.isActive && !p.isCompleted);
+    const completedPools = pools.filter((p) => p.isCompleted).slice(0, 3); // Take top 3 (since we fetched validation reverse, these are latest)
+
+    return {
+      pools, // Note: This now only contains the fetched subset (last 10)
+      openPools,
+      activePools,
+      completedPools,
+      poolCount: count,
+      isLoading: isCountLoading || isPoolsLoading,
+      refetch,
+    };
+  }, [poolsData, count, isCountLoading, isPoolsLoading, refetch]);
 }
 
 /**
@@ -141,14 +186,14 @@ export function useParticipantInfo(poolId: bigint | undefined, userAddress: `0x$
 
   const participant = data
     ? {
-        collateralDeposited: (data as any)[0] as bigint,
-        collateralYieldEarned: (data as any)[1] as bigint,
-        collateralUsedForPayments: (data as any)[2] as bigint,
-        missedPayments: Number((data as any)[3]),
-        totalPenalties: (data as any)[4] as bigint,
-        hasWon: (data as any)[5] as boolean,
-        potReceived: (data as any)[6] as bigint,
-      }
+      collateralDeposited: (data as any)[0] as bigint,
+      collateralYieldEarned: (data as any)[1] as bigint,
+      collateralUsedForPayments: (data as any)[2] as bigint,
+      missedPayments: Number((data as any)[3]),
+      totalPenalties: (data as any)[4] as bigint,
+      hasWon: (data as any)[5] as boolean,
+      potReceived: (data as any)[6] as bigint,
+    }
     : null;
 
   return { data: participant, ...rest };
