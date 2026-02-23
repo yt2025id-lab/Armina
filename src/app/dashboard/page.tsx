@@ -9,6 +9,7 @@ import { useArminaPool } from "@/hooks/useArminaPool";
 import { useCurrentAPY } from "@/hooks/useYieldOptimizer";
 import { formatIDRX } from "@/lib/constants";
 import toast from "react-hot-toast";
+import { useLanguage } from "@/components/providers";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function DashboardPage() {
   const { pools, isLoading: isLoadingPools } = useAllPools();
   const { processPayment, requestWinnerDraw, isPending: isPaymentPending } = useArminaPool();
   const { apyPercent: liveAPY } = useCurrentAPY();
+  const { t } = useLanguage();
 
   // Find first active pool the user might be in (we show all active pools)
   const activePools = pools.filter((p) => p.isActive && !p.isCompleted);
@@ -64,12 +66,10 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-5">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#1e2a4a] mb-4">Connect Your Wallet</h1>
-          <p className="text-slate-600 mb-6">
-            Please connect your wallet to view your dashboard
-          </p>
+          <h1 className="text-2xl font-bold text-[#1e2a4a] mb-4">{t.connectYourWallet}</h1>
+          <p className="text-slate-600 mb-6">{t.connectWalletToViewDashboard}</p>
           <button className="py-3 px-6 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] text-white rounded-xl font-bold">
-            Connect Wallet
+            {t.connectWallet}
           </button>
         </div>
       </div>
@@ -82,8 +82,8 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] px-5 py-8 text-white">
-        <h1 className="text-3xl font-bold mb-2">My Dashboard</h1>
-        <p className="text-white/70 text-sm">Track your pools, payments, and earnings</p>
+        <h1 className="text-3xl font-bold mb-2">{t.myDashboard}</h1>
+        <p className="text-white/70 text-sm">{t.trackPoolsDesc}</p>
       </div>
 
       <div className="px-5 py-6 max-w-4xl mx-auto">
@@ -93,15 +93,15 @@ export default function DashboardPage() {
         ) : participant ? (
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="p-5 bg-white border border-[#1e2a4a]/20 rounded-2xl">
-              <p className="text-xs text-slate-500 mb-1">Total Collateral</p>
+              <p className="text-xs text-slate-500 mb-1">{t.totalCollateral}</p>
               <p className="text-2xl font-bold text-[#1e2a4a]">
                 {formatIDRX(participant.collateralDeposited)}
               </p>
-              <p className="text-xs text-slate-400">IDRX locked</p>
+              <p className="text-xs text-slate-400">{t.idrxLocked}</p>
             </div>
 
             <div className="p-5 bg-white border border-[#1e2a4a]/20 rounded-2xl">
-              <p className="text-xs text-slate-500 mb-1">Yield Earned</p>
+              <p className="text-xs text-slate-500 mb-1">{t.yieldEarned3}</p>
               <p className="text-2xl font-bold text-green-600">
                 +{formatIDRX(participant.collateralYieldEarned)}
               </p>
@@ -113,12 +113,12 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="mb-6 p-6 bg-white border border-slate-200 rounded-2xl text-center">
-            <p className="text-slate-500">No pool participation found. Join a pool to get started!</p>
+            <p className="text-slate-500">{t.noPoolParticipation}</p>
             <button
               onClick={() => router.push("/pool")}
               className="mt-4 py-2 px-6 bg-[#1e2a4a] text-white rounded-xl font-semibold"
             >
-              Browse Pools
+              {t.browsePools3}
             </button>
           </div>
         )}
@@ -130,19 +130,19 @@ export default function DashboardPage() {
               <div>
                 <h2 className="text-xl font-bold">Pool #{selectedPool.id.toString()}</h2>
                 <p className="text-white/70 text-sm">
-                  {formatIDRX(selectedPool.contribution)} monthly
+                  {formatIDRX(selectedPool.contribution)} {t.monthly}
                 </p>
               </div>
               <span className="px-3 py-1 bg-green-400/20 text-green-400 rounded-full text-xs font-semibold">
-                Active
+                {t.active}
               </span>
             </div>
 
             {/* Progress */}
             <div className="mb-4">
               <div className="flex justify-between text-sm mb-2">
-                <span>Month {selectedPool.currentRound} of {selectedPool.totalRounds}</span>
-                <span>{Math.round((selectedPool.currentRound / selectedPool.totalRounds) * 100)}% Complete</span>
+                <span>{t.monthOf} {selectedPool.currentRound} {t.ofRound} {selectedPool.totalRounds}</span>
+                <span>{Math.round((selectedPool.currentRound / selectedPool.totalRounds) * 100)}% {t.percentComplete}</span>
               </div>
               <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
                 <div
@@ -154,22 +154,22 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-white/70 mb-1">Missed Payments</p>
+                <p className="text-white/70 mb-1">{t.missedPaymentsLabel2}</p>
                 <p className="font-semibold">
                   {participant.missedPayments === 0 ? (
-                    <span className="text-green-400">Perfect Record</span>
+                    <span className="text-green-400">{t.perfectRecord}</span>
                   ) : (
-                    `${participant.missedPayments} payments`
+                    `${participant.missedPayments} ${t.payments}`
                   )}
                 </p>
               </div>
               <div>
-                <p className="text-white/70 mb-1">Won</p>
+                <p className="text-white/70 mb-1">{t.won2}</p>
                 <p className="font-semibold">
                   {participant.hasWon ? (
-                    <span className="text-green-400">Yes!</span>
+                    <span className="text-green-400">{t.yesLabel}!</span>
                   ) : (
-                    "Not yet"
+                    t.notYet2
                   )}
                 </p>
               </div>
@@ -182,9 +182,9 @@ export default function DashboardPage() {
           <div className="mb-6 p-5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="font-bold text-purple-900">Chainlink VRF Winner Draw</h3>
+                <h3 className="font-bold text-purple-900">{t.chainlinkVrfDraw}</h3>
                 <p className="text-xs text-purple-600">
-                  Round {selectedPool.currentRound} of {selectedPool.totalRounds}
+                  {t.roundOf} {selectedPool.currentRound} {t.ofRound} {selectedPool.totalRounds}
                 </p>
               </div>
               <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
@@ -196,10 +196,10 @@ export default function DashboardPage() {
               disabled={isPaymentPending}
               className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50"
             >
-              {isPaymentPending ? "Requesting..." : "Draw Winner for This Round"}
+              {isPaymentPending ? t.requesting : t.drawWinnerThisRound}
             </button>
             <p className="text-xs text-purple-500 text-center mt-2">
-              Only pool creator or contract owner can trigger the draw
+              {t.onlyCreatorCanDraw2}
             </p>
           </div>
         )}
@@ -207,25 +207,25 @@ export default function DashboardPage() {
         {/* Collateral Status */}
         {participant && (
           <div className="mb-6 p-5 bg-white border border-[#1e2a4a]/20 rounded-2xl">
-            <h3 className="font-bold text-[#1e2a4a] mb-4">Collateral Status</h3>
+            <h3 className="font-bold text-[#1e2a4a] mb-4">{t.collateralStatus}</h3>
 
             <div className="space-y-3 text-sm mb-4">
               <div className="flex justify-between items-center">
-                <span className="text-slate-600">Initial Deposit</span>
+                <span className="text-slate-600">{t.initialDeposit}</span>
                 <span className="font-semibold text-[#1e2a4a]">
                   {formatIDRX(participant.collateralDeposited)}
                 </span>
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-slate-600">Yield Earned</span>
+                <span className="text-slate-600">{t.yieldEarned3}</span>
                 <span className="font-semibold text-green-600">
                   +{formatIDRX(participant.collateralYieldEarned)}
                 </span>
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-slate-600">Used for Missed Payments</span>
+                <span className="text-slate-600">{t.usedForMissedPayments}</span>
                 <span className={`font-semibold ${participant.collateralUsedForPayments > BigInt(0) ? "text-red-600" : "text-slate-400"}`}>
                   {participant.collateralUsedForPayments > BigInt(0) ? "-" : ""}
                   {formatIDRX(participant.collateralUsedForPayments)}
@@ -233,7 +233,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-slate-600">Penalties</span>
+                <span className="text-slate-600">{t.penalties}</span>
                 <span className={`font-semibold ${participant.totalPenalties > BigInt(0) ? "text-red-600" : "text-slate-400"}`}>
                   {participant.totalPenalties > BigInt(0) ? "-" : ""}
                   {formatIDRX(participant.totalPenalties)}
@@ -241,7 +241,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="pt-3 border-t border-slate-200 flex justify-between items-center">
-                <span className="font-bold text-[#1e2a4a]">Current Balance</span>
+                <span className="font-bold text-[#1e2a4a]">{t.currentBalance}</span>
                 <span className="text-xl font-bold text-[#1e2a4a]">
                   {formatIDRX(
                     participant.collateralDeposited +
@@ -255,9 +255,7 @@ export default function DashboardPage() {
 
             {participant.collateralUsedForPayments === BigInt(0) && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-xs text-green-800">
-                  <strong>Great job!</strong> Your collateral is intact. Keep paying on time to get it back in full + yield.
-                </p>
+                <p className="text-xs text-green-800">{t.greatJobCollateral}</p>
               </div>
             )}
           </div>
@@ -266,13 +264,13 @@ export default function DashboardPage() {
         {/* Projected Payout */}
         {projectedPayout !== undefined && (
           <div className="mb-6 p-5 bg-white border border-[#1e2a4a]/20 rounded-2xl">
-            <h3 className="font-bold text-[#1e2a4a] mb-4">Projected Final Payout</h3>
+            <h3 className="font-bold text-[#1e2a4a] mb-4">{t.projectedFinalPayout}</h3>
             <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-              <p className="text-xs text-green-700 mb-2">Estimated Return</p>
+              <p className="text-xs text-green-700 mb-2">{t.estimatedReturn}</p>
               <p className="text-2xl font-bold text-green-700">
                 {formatIDRX(projectedPayout)}
               </p>
-              <p className="text-xs text-green-600 mt-1">IDRX at pool completion</p>
+              <p className="text-xs text-green-600 mt-1">{t.idrxAtPoolCompletion}</p>
             </div>
           </div>
         )}
@@ -280,7 +278,7 @@ export default function DashboardPage() {
         {/* Payment History */}
         {payments && payments.length > 0 && (
           <div className="mb-6 p-5 bg-white border border-[#1e2a4a]/20 rounded-2xl">
-            <h3 className="font-bold text-[#1e2a4a] mb-4">Payment History</h3>
+            <h3 className="font-bold text-[#1e2a4a] mb-4">{t.paymentHistory}</h3>
             <div className="space-y-2">
               {payments.map((payment: any, idx: number) => (
                 <div
@@ -295,7 +293,7 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-[#1e2a4a]">
-                        Month {Number(payment.month)}
+                        {t.monthOf} {Number(payment.month)}
                       </p>
                       <p className="text-xs text-slate-500">
                         {new Date(Number(payment.timestamp) * 1000).toLocaleDateString()}
@@ -311,7 +309,7 @@ export default function DashboardPage() {
                         ? "bg-green-100 text-green-700"
                         : "bg-red-100 text-red-700"
                     }`}>
-                      {Number(payment.source) === 0 ? "Wallet" : "Collateral"}
+                      {Number(payment.source) === 0 ? t.walletSource : t.collateralSource}
                     </span>
                   </div>
                 </div>
@@ -328,7 +326,7 @@ export default function DashboardPage() {
               disabled={isPaymentPending}
               className="w-full py-4 px-6 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-bold hover:from-amber-600 hover:to-amber-700 disabled:opacity-50"
             >
-              {isPaymentPending ? "Processing..." : `Pay Month ${selectedPool.currentRound} Contribution`}
+              {isPaymentPending ? t.processing : `${t.payMonthContribution} ${selectedPool.currentRound} ${t.contribution3}`}
             </button>
           </div>
         )}
@@ -339,13 +337,13 @@ export default function DashboardPage() {
             onClick={() => router.push("/pool")}
             className="py-3 px-4 bg-white border-2 border-[#1e2a4a] text-[#1e2a4a] rounded-xl font-semibold hover:bg-[#1e2a4a]/5"
           >
-            Browse More Pools
+            {t.browseMorePools}
           </button>
           <button
             onClick={() => router.push("/optimizer")}
             className="py-3 px-4 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] text-white rounded-xl font-semibold hover:from-[#2a3a5c] hover:to-[#1e2a4a]"
           >
-            View AI Optimizer
+            {t.viewAiOptimizer}
           </button>
         </div>
       </div>

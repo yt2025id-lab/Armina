@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { formatUnits } from "viem";
 import toast from "react-hot-toast";
 import { useChainId, useSwitchChain } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
@@ -59,9 +58,8 @@ export default function FaucetPage() {
 
   const formatBalance = (bal: bigint | undefined) => {
     if (!bal) return "0";
-    return new Intl.NumberFormat("id-ID").format(
-      Math.floor(Number(formatUnits(bal, 2)))
-    );
+    const idrxInt = bal / 100n; // integer IDRX, avoid Number precision loss
+    return new Intl.NumberFormat("id-ID").format(idrxInt);
   };
 
   return (
@@ -100,7 +98,7 @@ export default function FaucetPage() {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between items-center">
               <span className="text-slate-600">{t.amountPerClaim}</span>
-              <span className="font-semibold text-[#1e2a4a]">500.000 IDRX</span>
+              <span className="font-semibold text-[#1e2a4a]">{t.faucetClaimAmount}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-600">{t.network}</span>
@@ -130,15 +128,15 @@ export default function FaucetPage() {
         {isWrongNetwork && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-red-800">Wrong Network</p>
-              <p className="text-xs text-red-600">Switch to Base Sepolia to continue.</p>
+              <p className="text-sm font-semibold text-red-800">{t.wrongNetwork}</p>
+              <p className="text-xs text-red-600">{t.wrongNetworkMsg}</p>
             </div>
             <button
               onClick={() => switchChain({ chainId: baseSepolia.id })}
               disabled={isSwitching}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50"
             >
-              {isSwitching ? "Switching..." : "Switch Network"}
+              {isSwitching ? t.switching : t.switchToBaseSepolia}
             </button>
           </div>
         )}
@@ -152,7 +150,7 @@ export default function FaucetPage() {
           {!isConnected
             ? t.connectToClaim
             : isSwitching
-            ? "Switching Network..."
+            ? t.switching
             : isPending
             ? t.claiming
             : isConfirming

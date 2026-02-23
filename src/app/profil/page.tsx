@@ -119,7 +119,7 @@ export default function ProfilPage() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-green-400 text-xs font-semibold">Connected · Base Sepolia</span>
+                  <span className="text-green-400 text-xs font-semibold">{t.connectedBaseSepolia}</span>
                 </div>
                 <p className="text-white font-mono font-bold text-xl">{formatAddress(displayAddress)}</p>
                 <p className="text-white/40 text-xs mt-0.5 font-mono">{displayAddress}</p>
@@ -143,13 +143,13 @@ export default function ProfilPage() {
                   />
                 </div>
                 <p className="text-white/30 text-xs mt-1.5">
-                  {reputationScore} / {levelMax} pts to next level
+                  {reputationScore} / {levelMax} {t.ptsToNextLevel}
                 </p>
               </div>
 
               {collateralDiscount > 0 && (
                 <div className="bg-green-500/15 border border-green-400/30 rounded-2xl px-5 py-4 text-center">
-                  <p className="text-green-400/70 text-xs mb-0.5">Collateral Discount</p>
+                  <p className="text-green-400/70 text-xs mb-0.5">{t.collateralDiscount}</p>
                   <p className="text-green-400 text-3xl font-bold">-{collateralDiscount}%</p>
                 </div>
               )}
@@ -159,10 +159,10 @@ export default function ProfilPage() {
           {/* Quick stat chips */}
           <div className="mt-8 flex flex-wrap gap-3">
             {[
-              { label: "Active Pools", value: poolsActive },
-              { label: "Completed Pools", value: poolsCompleted },
-              { label: "On-time Payments", value: reputation?.onTimePayments ?? "—" },
-              { label: "Late Payments", value: reputation?.latePayments ?? "—" },
+              { label: t.activePoolsChip, value: poolsActive },
+              { label: t.completedPoolsChip, value: poolsCompleted },
+              { label: t.onTimePaymentsChip, value: reputation?.onTimePayments ?? "—" },
+              { label: t.latePaymentsChip, value: reputation?.latePayments ?? "—" },
             ].map((s) => (
               <div key={s.label} className="bg-white/6 border border-white/8 rounded-xl px-4 py-2.5 flex items-center gap-3">
                 <span className="text-white/40 text-xs">{s.label}</span>
@@ -189,7 +189,7 @@ export default function ProfilPage() {
                   <p className="text-4xl font-bold text-[#1e2a4a]">{poolsActive}</p>
                   <div className="mt-3 flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                    <span className="text-xs text-slate-400">Currently running</span>
+                    <span className="text-xs text-slate-400">{t.currentlyRunning}</span>
                   </div>
                 </div>
                 <div className="bg-white border border-slate-200 rounded-2xl p-5">
@@ -197,7 +197,7 @@ export default function ProfilPage() {
                   <p className="text-4xl font-bold text-[#1e2a4a]">{poolsCompleted}</p>
                   <div className="mt-3 flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 bg-slate-400 rounded-full" />
-                    <span className="text-xs text-slate-400">All time</span>
+                    <span className="text-xs text-slate-400">{t.allTime}</span>
                   </div>
                 </div>
               </div>
@@ -210,7 +210,7 @@ export default function ProfilPage() {
                   <h2 className="text-base font-bold text-slate-900">{t.paymentHistory}</h2>
                   {reputation.onTimePayments + reputation.latePayments > 0 && (
                     <span className="text-xs text-slate-400">
-                      {Math.round((reputation.onTimePayments / (reputation.onTimePayments + reputation.latePayments)) * 100)}% on-time rate
+                      {Math.round((reputation.onTimePayments / (reputation.onTimePayments + reputation.latePayments)) * 100)}% {t.onTimeRateLabel}
                     </span>
                   )}
                 </div>
@@ -219,12 +219,12 @@ export default function ProfilPage() {
                   <div className="p-4 bg-green-50 border border-green-100 rounded-xl">
                     <p className="text-xs text-green-600 font-medium mb-1">{t.onTime}</p>
                     <p className="text-3xl font-bold text-green-700">{reputation.onTimePayments}</p>
-                    <p className="text-xs text-green-500 mt-1">payments</p>
+                    <p className="text-xs text-green-500 mt-1">{t.payments}</p>
                   </div>
                   <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
                     <p className="text-xs text-amber-600 font-medium mb-1">{t.late}</p>
                     <p className="text-3xl font-bold text-amber-700">{reputation.latePayments}</p>
-                    <p className="text-xs text-amber-500 mt-1">payments</p>
+                    <p className="text-xs text-amber-500 mt-1">{t.payments}</p>
                   </div>
                 </div>
 
@@ -241,16 +241,16 @@ export default function ProfilPage() {
                       <div className="bg-amber-400 h-full flex-1" />
                     </div>
                     <div className="flex justify-between text-xs text-slate-400 mt-1.5">
-                      <span>On-time</span>
-                      <span>Late</span>
+                      <span>{t.onTimeBar}</span>
+                      <span>{t.lateBar}</span>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
               <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-8 text-center">
-                <p className="text-slate-400 text-sm">No payment history yet</p>
-                <p className="text-slate-300 text-xs mt-1">Join a pool to start building your reputation</p>
+                <p className="text-slate-400 text-sm">{t.noPaymentHistory}</p>
+                <p className="text-slate-300 text-xs mt-1">{t.joinPoolToBuildRep}</p>
               </div>
             )}
 
@@ -290,7 +290,7 @@ export default function ProfilPage() {
 
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-slate-500">Score progress</span>
+                  <span className="text-slate-500">{t.scoreProgress}</span>
                   <span className="font-semibold text-[#1e2a4a]">{reputationScore} / {levelMax}</span>
                 </div>
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -356,21 +356,21 @@ export default function ProfilPage() {
               </div>
               <div className="p-5">
                 <div className="flex items-center justify-between mb-4 p-3 bg-slate-50 rounded-xl">
-                  <span className="text-xs text-slate-500">Amount per claim</span>
-                  <span className="text-sm font-bold text-[#1e2a4a]">500.000 IDRX</span>
+                  <span className="text-xs text-slate-500">{t.amountPerClaim}</span>
+                  <span className="text-sm font-bold text-[#1e2a4a]">{t.faucetClaimAmount}</span>
                 </div>
 
                 {isWrongNetwork ? (
                   <div className="space-y-3">
                     <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
-                      Wrong network. Switch to Base Sepolia to claim.
+                      {t.wrongNetworkMsg}
                     </div>
                     <Button
                       className="w-full"
                       onClick={() => switchChain({ chainId: baseSepolia.id })}
                       isLoading={isSwitchingChain}
                     >
-                      Switch to Base Sepolia
+                      {t.switchToBaseSepolia}
                     </Button>
                   </div>
                 ) : (
@@ -436,8 +436,8 @@ export default function ProfilPage() {
                 alt="Armina"
                 className="w-14 h-14 mx-auto mb-3 object-contain rounded-xl"
               />
-              <p className="text-white font-bold text-sm">Armina Protocol</p>
-              <p className="text-white/30 text-xs mt-0.5">v1.0.0 · Base Sepolia Testnet</p>
+              <p className="text-white font-bold text-sm">{t.arminaProtocol}</p>
+              <p className="text-white/30 text-xs mt-0.5">{t.version}</p>
               <div className="mt-4 flex items-center justify-center gap-3">
                 <div className="flex items-center gap-1.5 bg-white/8 border border-white/10 rounded-lg px-3 py-1.5">
                   <div className="w-4 h-4 rounded-full bg-[#0052FF] flex items-center justify-center">

@@ -11,6 +11,7 @@ import { useYieldData } from "@/hooks/useYieldData";
 import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
 import { formatIDRX, calculateCollateral, formatAddress } from "@/lib/constants";
 import toast from "react-hot-toast";
+import { useLanguage } from "@/components/providers";
 
 export default function PoolDetailsPage({
   params,
@@ -21,6 +22,7 @@ export default function PoolDetailsPage({
   const poolId = BigInt(id);
   const router = useRouter();
   const { address, isConnected } = useAuth();
+  const { t } = useLanguage();
 
   // Real contract data
   const { data: pool, raw: rawPool, isLoading: isPoolLoading } = usePoolDetails(poolId);
@@ -41,16 +43,16 @@ export default function PoolDetailsPage({
 
   useEffect(() => {
     if (actionSuccess) {
-      toast.success("Transaction successful!", { id: "pool-action" });
+      toast.success(t.transactionSuccessful, { id: "pool-action" });
     }
-  }, [actionSuccess]);
+  }, [actionSuccess, t]);
 
   if (isPoolLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-[#1e2a4a] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-500">Loading pool data...</p>
+          <p className="text-slate-500">{t.loadingPoolData}</p>
         </div>
       </div>
     );
@@ -60,13 +62,13 @@ export default function PoolDetailsPage({
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-5">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#1e2a4a] mb-4">Pool Not Found</h1>
-          <p className="text-slate-600 mb-6">Pool #{id} does not exist or has not been created yet.</p>
+          <h1 className="text-2xl font-bold text-[#1e2a4a] mb-4">{t.poolNotFound}</h1>
+          <p className="text-slate-600 mb-6">Pool #{id} {t.poolDoesNotExist}</p>
           <button
             onClick={() => router.push("/pool")}
             className="py-3 px-6 bg-[#1e2a4a] text-white rounded-xl font-bold"
           >
-            Browse Pools
+            {t.browsePools}
           </button>
         </div>
       </div>
@@ -96,10 +98,10 @@ export default function PoolDetailsPage({
     }
 
     try {
-      toast.loading("Approving IDRX...", { id: "approve" });
+      toast.loading(t.approvingIdrx, { id: "approve" });
       approve(ARMINA_POOL_ADDRESS, totalDueAtJoin);
 
-      toast.loading("Joining pool...", { id: "pool-action" });
+      toast.loading(t.joiningPool, { id: "pool-action" });
       await joinPool(poolId);
       toast.dismiss("approve");
     } catch (error) {
@@ -120,12 +122,12 @@ export default function PoolDetailsPage({
   };
 
   const statusLabel = pool.isCompleted
-    ? "Completed"
+    ? t.completedStatus
     : pool.isActive
-    ? "Active"
+    ? t.activeStatus
     : isOpen
-    ? "Open for Joining"
-    : "Full";
+    ? t.openForJoining
+    : t.fullStatus;
 
   const statusColor = pool.isCompleted
     ? "bg-slate-200 text-slate-600"
@@ -143,13 +145,13 @@ export default function PoolDetailsPage({
           onClick={() => router.back()}
           className="mb-4 text-white/80 hover:text-white flex items-center gap-2"
         >
-          &larr; Back to Pools
+          {t.backToPools}
         </button>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold mb-1">Pool #{id}</h1>
             <p className="text-white/70 text-sm">
-              {formatIDRX(pool.contribution)} / month &middot; {pool.maxParticipants} Participants
+              {formatIDRX(pool.contribution)} {t.perMonthLabel} &middot; {pool.maxParticipants} {t.participants}
             </p>
           </div>
           <div className="text-right">
@@ -158,7 +160,7 @@ export default function PoolDetailsPage({
               {liveAPY > 0 && (
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse inline-block" />
               )}
-              {liveAPY > 0 ? "Live APY" : "Est. APY"}
+              {liveAPY > 0 ? t.liveApy : t.estApy}
             </div>
           </div>
         </div>
@@ -168,7 +170,7 @@ export default function PoolDetailsPage({
         {/* Pool Status Banner */}
         <div className="mb-6 p-5 bg-white border-2 border-[#1e2a4a]/20 rounded-2xl">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-[#1e2a4a]">Pool Status</h2>
+            <h2 className="font-bold text-[#1e2a4a]">{t.poolStatus}</h2>
             <span className={`px-3 py-1 ${statusColor} rounded-full text-xs font-semibold`}>
               {statusLabel}
             </span>
@@ -177,10 +179,10 @@ export default function PoolDetailsPage({
           <div className="mb-3">
             <div className="flex justify-between text-sm mb-2">
               <span className="text-slate-600">
-                {pool.currentParticipants} / {pool.maxParticipants} Participants
+                {pool.currentParticipants} / {pool.maxParticipants} {t.participants}
               </span>
               <span className="text-[#1e2a4a] font-semibold">
-                {spotsRemaining > 0 ? `${spotsRemaining} spots left` : "Pool full"}
+                {spotsRemaining > 0 ? `${spotsRemaining} ${t.spotsLeft}` : t.poolFull}
               </span>
             </div>
             <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
@@ -193,13 +195,13 @@ export default function PoolDetailsPage({
 
           {pool.isActive && (
             <p className="text-xs text-green-600 font-medium">
-              Round {pool.currentRound} of {pool.totalRounds}
+              {t.roundOf} {pool.currentRound} {t.ofRound} {pool.totalRounds}
             </p>
           )}
 
           {isOpen && (
             <p className="text-xs text-slate-500">
-              Pool will start automatically when all {pool.maxParticipants} spots are filled
+              {t.spotsFillDesc} {pool.maxParticipants} {t.spotsFillDesc2}
             </p>
           )}
         </div>
@@ -209,9 +211,9 @@ export default function PoolDetailsPage({
           <div className="mb-6 p-5 bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="font-bold text-purple-900">Chainlink VRF Winner Draw</h3>
+                <h3 className="font-bold text-purple-900">{t.chainlinkVrfDraw}</h3>
                 <p className="text-xs text-purple-700 mt-1">
-                  Round {pool.currentRound} of {pool.totalRounds} &middot; Provably fair on-chain randomness
+                  {t.roundOf} {pool.currentRound} {t.ofRound} {pool.totalRounds} &middot; {t.provablyFair}
                 </p>
               </div>
               <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
@@ -225,25 +227,23 @@ export default function PoolDetailsPage({
               className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isActionPending || isActionConfirming
-                ? "Requesting VRF..."
-                : `Draw Winner for Round ${pool.currentRound}`}
+                ? t.requestingVrf
+                : `${t.drawWinnerForRound} ${pool.currentRound}`}
             </button>
 
-            <p className="text-xs text-purple-600 mt-2 text-center">
-              Only pool creator or contract owner can trigger the draw
-            </p>
+            <p className="text-xs text-purple-600 mt-2 text-center">{t.onlyCreatorCanDraw}</p>
           </div>
         )}
 
         {/* Payment Breakdown Card */}
         {isOpen && (
           <div className="mb-6 p-6 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] rounded-2xl text-white">
-            <h2 className="font-bold text-lg mb-4">Required Payment to Join</h2>
+            <h2 className="font-bold text-lg mb-4">{t.requiredPaymentToJoin}</h2>
 
             <div className="space-y-3 mb-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-white/70 text-sm">Security Collateral (125%)</p>
+                  <p className="text-white/70 text-sm">{t.securityCollateral125}</p>
                   <p className="text-xs text-white/60">
                     = 125% x ({pool.maxParticipants} x {formatIDRX(pool.contribution)})
                   </p>
@@ -264,28 +264,28 @@ export default function PoolDetailsPage({
               {collateralDiscount > 0 && (
                 <div className="p-3 bg-green-400/20 border border-green-400/30 rounded-xl">
                   <p className="text-xs text-green-300 font-semibold">
-                    Reputation Discount: -{collateralDiscount}% collateral
+                    {t.reputationDiscountLabel} -{collateralDiscount}% {t.collateralReduction}
                   </p>
                   <p className="text-xs text-green-200/80 mt-1">
-                    You saved {formatIDRX(baseCollateral - collateral)} IDRX thanks to your reputation level!
+                    {t.savedThanksReputation} {formatIDRX(baseCollateral - collateral)} {t.savedIdrxThanksReputation}
                   </p>
                 </div>
               )}
 
               <div className="flex justify-between items-center">
-                <p className="text-white/70 text-sm">First Month Payment</p>
+                <p className="text-white/70 text-sm">{t.firstMonthPaymentLabel}</p>
                 <p className="text-xl font-bold">+{formatIDRX(pool.contribution)}</p>
               </div>
 
               <div className="pt-3 border-t border-white/30 flex justify-between items-center">
-                <p className="font-bold">Total Due Now</p>
+                <p className="font-bold">{t.totalDueNow}</p>
                 <p className="text-3xl font-bold">{formatIDRX(totalDueAtJoin)}</p>
               </div>
             </div>
 
             <div className="p-4 bg-white/10 rounded-xl border border-white/20">
               <p className="text-xs text-white/90">
-                <strong>Collateral is returned in full</strong> at pool end (+ yield) if you pay all monthly contributions on time
+                <strong>{t.collateralReturnedFull}</strong>
               </p>
             </div>
           </div>
@@ -294,30 +294,30 @@ export default function PoolDetailsPage({
         {/* Projected Earnings */}
         <div className="mb-6 p-5 bg-white border border-[#1e2a4a]/20 rounded-2xl">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-[#1e2a4a]">Projected Earnings</h3>
+            <h3 className="font-bold text-[#1e2a4a]">{t.projectedEarnings}</h3>
             {liveAPY > 0 && (
               <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium flex items-center gap-1">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                Live Rates
+                {t.liveRates}
               </span>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="p-4 bg-slate-50 rounded-xl">
-              <p className="text-xs text-slate-500 mb-1">Your Collateral Yield</p>
+              <p className="text-xs text-slate-500 mb-1">{t.yourCollateralYield}</p>
               <p className="text-2xl font-bold text-green-600">
                 +{Math.round(collateralYield).toLocaleString("id-ID")}
               </p>
-              <p className="text-xs text-slate-400">IDRX (over {pool.maxParticipants} months)</p>
+              <p className="text-xs text-slate-400">{t.idrxOver} {pool.maxParticipants} {t.monthsSuffix}</p>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-xl">
-              <p className="text-xs text-slate-500 mb-1">If You Win</p>
+              <p className="text-xs text-slate-500 mb-1">{t.ifYouWin}</p>
               <p className="text-2xl font-bold text-[#1e2a4a]">
                 +{formatIDRX(monthlyPot)}
               </p>
-              <p className="text-xs text-slate-400">IDRX pot + pot yield</p>
+              <p className="text-xs text-slate-400">{t.idrxPotPlusYield}</p>
             </div>
           </div>
 
@@ -325,7 +325,7 @@ export default function PoolDetailsPage({
           {recommendation && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-xs text-blue-800">
-                <strong>AI Optimizer:</strong> Best yield via {recommendation.protocol} at {recommendation.apy.toFixed(1)}% APY
+                <strong>{t.aiOptimizerLabel}</strong> {t.bestYieldVia} {recommendation.protocol} {t.atLabel} {recommendation.apy.toFixed(1)}% APY
               </p>
             </div>
           )}
@@ -333,25 +333,25 @@ export default function PoolDetailsPage({
 
         {/* Pool Details */}
         <div className="mb-6 p-5 bg-white border border-[#1e2a4a]/20 rounded-2xl">
-          <h3 className="font-bold text-[#1e2a4a] mb-4">Pool Details</h3>
+          <h3 className="font-bold text-[#1e2a4a] mb-4">{t.poolDetails}</h3>
 
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-600">Pool Size</span>
-              <span className="font-semibold text-[#1e2a4a]">{pool.maxParticipants} Participants</span>
+              <span className="text-slate-600">{t.poolSizeLabel}</span>
+              <span className="font-semibold text-[#1e2a4a]">{pool.maxParticipants} {t.participants}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-600">Duration</span>
-              <span className="font-semibold text-[#1e2a4a]">{pool.maxParticipants} Months</span>
+              <span className="text-slate-600">{t.durationLabel}</span>
+              <span className="font-semibold text-[#1e2a4a]">{pool.maxParticipants} {t.months}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-600">Monthly Pot</span>
+              <span className="text-slate-600">{t.monthlyPotLabel}</span>
               <span className="font-semibold text-[#1e2a4a]">
                 {formatIDRX(monthlyPot)}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-600">APY Rate</span>
+              <span className="text-slate-600">{t.apyRateLabel}</span>
               <span className="font-semibold text-green-600 flex items-center gap-1">
                 {apy.toFixed(1)}%
                 {liveAPY > 0 && (
@@ -360,11 +360,11 @@ export default function PoolDetailsPage({
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-600">Winner Selection</span>
+              <span className="text-slate-600">{t.winnerSelectionLabel}</span>
               <span className="font-semibold text-purple-600">Chainlink VRF</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-600">Contract</span>
+              <span className="text-slate-600">{t.contractLabel}</span>
               <a
                 href={`https://sepolia.basescan.org/address/${ARMINA_POOL_ADDRESS}`}
                 target="_blank"
@@ -380,29 +380,29 @@ export default function PoolDetailsPage({
         {/* Your Participation Status (if participating) */}
         {participant && (
           <div className="mb-6 p-5 bg-green-50 border border-green-200 rounded-2xl">
-            <h3 className="font-bold text-green-800 mb-4">Your Participation</h3>
+            <h3 className="font-bold text-green-800 mb-4">{t.yourParticipation}</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-green-700">Collateral Locked</span>
+                <span className="text-green-700">{t.collateralLocked}</span>
                 <span className="font-semibold text-green-900">{formatIDRX(participant.collateralDeposited)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-green-700">Yield Earned</span>
+                <span className="text-green-700">{t.yieldEarned2}</span>
                 <span className="font-semibold text-green-600">+{formatIDRX(participant.collateralYieldEarned)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-green-700">Missed Payments</span>
+                <span className="text-green-700">{t.missedPaymentsLabel}</span>
                 <span className={`font-semibold ${participant.missedPayments > 0 ? "text-red-600" : "text-green-600"}`}>
                   {participant.missedPayments}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-green-700">Won</span>
-                <span className="font-semibold">{participant.hasWon ? "Yes" : "Not yet"}</span>
+                <span className="text-green-700">{t.wonLabel2}</span>
+                <span className="font-semibold">{participant.hasWon ? t.yesLabel : t.notYet}</span>
               </div>
               {participant.potReceived > BigInt(0) && (
                 <div className="flex justify-between">
-                  <span className="text-green-700">Pot Received</span>
+                  <span className="text-green-700">{t.potReceivedLabel}</span>
                   <span className="font-bold text-green-900">{formatIDRX(participant.potReceived)}</span>
                 </div>
               )}
@@ -410,10 +410,10 @@ export default function PoolDetailsPage({
           </div>
         )}
 
-        {/* Participants placeholder */}
+        {/* Participants list */}
         <div className="mb-6 p-5 bg-white border border-[#1e2a4a]/20 rounded-2xl">
           <h3 className="font-bold text-[#1e2a4a] mb-4">
-            Participants ({pool.currentParticipants}/{pool.maxParticipants})
+            {t.participants} ({pool.currentParticipants}/{pool.maxParticipants})
           </h3>
 
           <div className="space-y-2">
@@ -427,10 +427,10 @@ export default function PoolDetailsPage({
                   <div className="w-8 h-8 bg-gradient-to-br from-[#1e2a4a] to-[#2a3a5c] rounded-full flex items-center justify-center text-white font-bold text-sm">
                     {index + 1}
                   </div>
-                  <p className="text-sm text-slate-600">Participant #{index + 1}</p>
+                  <p className="text-sm text-slate-600">{t.participantSlot}{index + 1}</p>
                 </div>
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                  Joined
+                  {t.joinedBadge}
                 </span>
               </div>
             ))}
@@ -444,7 +444,7 @@ export default function PoolDetailsPage({
                 <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-400 font-bold text-sm">
                   {pool.currentParticipants + index + 1}
                 </div>
-                <p className="text-sm text-slate-400">Waiting for participant...</p>
+                <p className="text-sm text-slate-400">{t.waitingForParticipant}</p>
               </div>
             ))}
           </div>
@@ -452,24 +452,24 @@ export default function PoolDetailsPage({
 
         {/* How Monthly Payments Work */}
         <div className="mb-6 p-5 bg-slate-50 rounded-2xl">
-          <h3 className="font-bold text-[#1e2a4a] mb-3">How Monthly Payments Work</h3>
+          <h3 className="font-bold text-[#1e2a4a] mb-3">{t.howMonthlyPaymentsWork}</h3>
           <div className="space-y-3 text-sm text-slate-600">
             <div className="flex gap-3">
               <span className="text-[#1e2a4a] font-bold">1.</span>
               <p>
-                <strong>Automatic Deduction:</strong> Each month, {formatIDRX(pool.contribution)} is auto-deducted from your wallet
+                <strong>{t.automaticDeductionLabel}</strong> {formatIDRX(pool.contribution)} {t.automaticDeductionDesc}
               </p>
             </div>
             <div className="flex gap-3">
               <span className="text-[#1e2a4a] font-bold">2.</span>
               <p>
-                <strong>If Wallet Insufficient:</strong> Payment is taken from your collateral + 10% penalty
+                <strong>{t.ifWalletInsufficientLabel}</strong> {t.ifWalletInsufficientDesc}
               </p>
             </div>
             <div className="flex gap-3">
               <span className="text-[#1e2a4a] font-bold">3.</span>
               <p>
-                <strong>Keep Wallet Funded:</strong> Maintain at least {formatIDRX(pool.contribution)} balance to avoid penalties
+                <strong>{t.keepWalletFundedLabel}</strong> {t.maintainAtLeast} {formatIDRX(pool.contribution)} {t.toAvoidPenalties}
               </p>
             </div>
           </div>
@@ -484,22 +484,22 @@ export default function PoolDetailsPage({
               className="w-full py-4 px-6 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] text-white rounded-xl font-bold hover:from-[#2a3a5c] hover:to-[#1e2a4a] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mb-4"
             >
               {!isConnected
-                ? "Connect Wallet to Join"
+                ? t.connectWalletToJoin2
                 : isApproving
-                ? "Approving IDRX..."
+                ? t.approvingIdrx
                 : isActionPending
-                ? "Joining Pool..."
+                ? t.joiningPool
                 : isActionConfirming
-                ? "Confirming..."
-                : `Join Pool (${formatIDRX(totalDueAtJoin)})`}
+                ? t.confirming
+                : `${t.joinPoolWithAmount} (${formatIDRX(totalDueAtJoin)})`}
             </button>
 
             <p className="text-xs text-center text-slate-500 mb-6">
-              By joining this pool, you agree to the{" "}
+              {t.byJoiningPool}{" "}
               <a href="#" className="text-[#1e2a4a] hover:underline">
-                Terms of Service
+                {t.termsOfService}
               </a>
-              . Ensure you have {formatIDRX(totalDueAtJoin)} in your wallet.
+              . {t.ensureYouHave} {formatIDRX(totalDueAtJoin)} {t.inYourWallet}
             </p>
           </>
         )}

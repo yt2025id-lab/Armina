@@ -14,7 +14,7 @@ const wagmiConfig = createConfig({
     coinbaseWallet({
       appName: "Armina - Arisan Mini App",
       appLogoUrl: "https://armina.app/logo.png",
-      preference: "smartWalletOnly",
+      preference: "all",
     }),
   ],
   transports: {

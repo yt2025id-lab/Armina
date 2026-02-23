@@ -8,6 +8,7 @@ import { REPUTATION_LEVELS } from "@/lib/constants";
 import { formatAddress } from "@/lib/constants";
 import { useReputationData, useHasReputation, useMintReputation } from "@/hooks/useReputation";
 import toast from "react-hot-toast";
+import { useLanguage } from "@/components/providers";
 
 const LEVEL_COLORS: Record<ReputationLevel, { bg: string; text: string; border: string }> = {
   bronze: { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-200" },
@@ -26,6 +27,7 @@ const LEVEL_LABELS: Record<ReputationLevel, string> = {
 export default function PeringkatPage() {
   const { address, isConnected } = useAuth();
   const [activeTab, setActiveTab] = useState<"leaderboard" | "score">("leaderboard");
+  const { t } = useLanguage();
 
   // Real reputation data
   const { data: reputation } = useReputationData(address);
@@ -48,8 +50,8 @@ export default function PeringkatPage() {
       {/* Hero Header */}
       <div className="bg-[#1e2a4a] px-5 pt-6 pb-10 text-white">
         <div className="mb-4">
-          <h1 className="text-xl font-bold">Ranking</h1>
-          <p className="text-white/60 text-sm">Leaderboard & reputation score</p>
+          <h1 className="text-xl font-bold">{t.rankingTitle}</h1>
+          <p className="text-white/60 text-sm">{t.leaderboardScore}</p>
         </div>
 
         {/* User Rank Card */}
@@ -63,12 +65,12 @@ export default function PeringkatPage() {
                   </span>
                 </div>
                 <div>
-                  <p className="text-xs text-white/60">Your Level</p>
+                  <p className="text-xs text-white/60">{t.yourLevel}</p>
                   <p className="font-semibold">{address ? formatAddress(address) : "-"}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-xs text-white/60">Score</p>
+                <p className="text-xs text-white/60">{t.scoreLabel}</p>
                 <p className="font-bold text-2xl text-green-400">{userScore}</p>
               </div>
             </div>
@@ -76,7 +78,7 @@ export default function PeringkatPage() {
         ) : (
           <div className="p-4 bg-white/10 backdrop-blur rounded-2xl text-center">
             <p className="text-white/70 text-sm">
-              {isConnected ? "Mint NFT to join leaderboard" : "Connect wallet to see ranking"}
+              {isConnected ? t.mintNftToJoin : t.connectToSeeRanking}
             </p>
           </div>
         )}
@@ -94,7 +96,7 @@ export default function PeringkatPage() {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Leaderboard
+            {t.leaderboard}
           </button>
           <button
             onClick={() => setActiveTab("score")}
@@ -104,7 +106,7 @@ export default function PeringkatPage() {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Score System
+            {t.scoreSystem}
           </button>
         </div>
 
@@ -113,31 +115,31 @@ export default function PeringkatPage() {
             {/* Info about leaderboard */}
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <p className="text-sm text-slate-600">
-                Leaderboard data is fetched from the on-chain Reputation contract.
-                {!hasNFT && isConnected && " Mint your Reputation NFT to start earning score."}
-                {!isConnected && " Connect your wallet to participate."}
+                {t.leaderboardOnChainInfo}
+                {!hasNFT && isConnected && ` ${t.mintNftToEarnScore}`}
+                {!isConnected && ` ${t.connectToParticipate}`}
               </p>
             </div>
 
             {/* Your Stats */}
             {isConnected && reputation && (
               <div className="p-5 border border-slate-200 rounded-2xl">
-                <p className="font-semibold text-slate-900 mb-4">Your Stats</p>
+                <p className="font-semibold text-slate-900 mb-4">{t.yourStats}</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 bg-slate-50 rounded-xl">
-                    <p className="text-xs text-slate-500">Score</p>
+                    <p className="text-xs text-slate-500">{t.scoreLabel}</p>
                     <p className="text-xl font-bold text-[#1e2a4a]">{reputation.score}</p>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-xl">
-                    <p className="text-xs text-slate-500">Level</p>
+                    <p className="text-xs text-slate-500">{t.levelLabel}</p>
                     <p className="text-xl font-bold text-[#1e2a4a]">{LEVEL_LABELS[reputation.level as ReputationLevel]}</p>
                   </div>
                   <div className="p-3 bg-green-50 rounded-xl">
-                    <p className="text-xs text-slate-500">On-time Payments</p>
+                    <p className="text-xs text-slate-500">{t.onTimePaymentsLabel2}</p>
                     <p className="text-xl font-bold text-green-600">{reputation.onTimePayments}</p>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-xl">
-                    <p className="text-xs text-slate-500">Pools Completed</p>
+                    <p className="text-xs text-slate-500">{t.poolsCompletedLabel2}</p>
                     <p className="text-xl font-bold text-[#1e2a4a]">{reputation.totalPoolsCompleted}</p>
                   </div>
                 </div>
@@ -152,10 +154,8 @@ export default function PeringkatPage() {
                     <span className="text-2xl font-bold">NFT</span>
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold">Mint Reputation NFT</p>
-                    <p className="text-white/70 text-sm">
-                      Free! Start collecting score and join leaderboard
-                    </p>
+                    <p className="font-semibold">{t.mintReputationNft}</p>
+                    <p className="text-white/70 text-sm">{t.mintReputationNftDesc}</p>
                   </div>
                 </div>
                 <Button
@@ -163,7 +163,7 @@ export default function PeringkatPage() {
                   isLoading={isMinting}
                   className="w-full mt-4 bg-white text-[#1e2a4a] hover:bg-white/90"
                 >
-                  Mint Free NFT
+                  {t.mintFreeNft}
                 </Button>
               </div>
             )}
@@ -174,19 +174,19 @@ export default function PeringkatPage() {
             <div className="space-y-4">
               {/* How to Earn Points */}
               <div className="p-5 border border-slate-200 rounded-2xl">
-                <p className="font-semibold text-slate-900 mb-4">How to Earn Points</p>
+                <p className="font-semibold text-slate-900 mb-4">{t.howToEarnPoints}</p>
                 <div className="space-y-3">
-                  <ScoreItem label="Pay contribution on time" points="+10" isPositive />
-                  <ScoreItem label="Complete pool (until end)" points="+50" isPositive />
-                  <ScoreItem label="Win drawing" points="+5" isPositive />
-                  <ScoreItem label="Late payment (1-3 days)" points="-20" isPositive={false} />
-                  <ScoreItem label="Default / no payment" points="-100" isPositive={false} />
+                  <ScoreItem label={t.payContributionOnTime} points="+10" isPositive />
+                  <ScoreItem label={t.completePoolUntilEnd} points="+50" isPositive />
+                  <ScoreItem label={t.winDrawing} points="+5" isPositive />
+                  <ScoreItem label={t.latePaymentScore} points="-20" isPositive={false} />
+                  <ScoreItem label={t.defaultNoPayment} points="-100" isPositive={false} />
                 </div>
               </div>
 
               {/* Level Benefits */}
               <div className="p-5 border border-slate-200 rounded-2xl">
-                <p className="font-semibold text-slate-900 mb-4">Levels & Benefits</p>
+                <p className="font-semibold text-slate-900 mb-4">{t.levelsAndBenefits}</p>
                 <div className="space-y-3">
                   {(["bronze", "silver", "gold", "diamond"] as ReputationLevel[]).map((level) => {
                     const colors = LEVEL_COLORS[level];
@@ -207,7 +207,7 @@ export default function PeringkatPage() {
                           </span>
                         </div>
                         <span className={`font-semibold ${discount > 0 ? "text-green-600" : "text-slate-400"}`}>
-                          {discount > 0 ? `-${discount}% collateral` : "Basic access"}
+                          {discount > 0 ? `-${discount}% ${t.collateralReduction}` : t.basicAccess}
                         </span>
                       </div>
                     );
@@ -217,10 +217,8 @@ export default function PeringkatPage() {
 
               {/* NFT Info */}
               <div className="p-5 bg-[#1e2a4a] rounded-2xl text-white">
-                <p className="font-semibold mb-2">Soulbound Reputation NFT</p>
-                <p className="text-white/70 text-sm">
-                  This NFT cannot be sold or transferred. Your reputation score is permanently recorded on the blockchain as proof of your credibility.
-                </p>
+                <p className="font-semibold mb-2">{t.soulboundReputationNft}</p>
+                <p className="text-white/70 text-sm">{t.soulboundNftDesc}</p>
               </div>
             </div>
           </>

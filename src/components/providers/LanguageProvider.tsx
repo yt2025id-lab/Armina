@@ -16,7 +16,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem("armina_language") as Language;
-    if (saved && (saved === "en" || saved === "id")) {
+    if (saved && (saved === "en" || saved === "id" || saved === "zh")) {
       setLanguage(saved);
     }
   }, []);

@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
+import { useLanguage } from "@/components/providers";
 
 export default function AboutPage() {
+    const { t } = useLanguage();
+
     return (
         <div className="min-h-screen bg-[#1d2856] text-white overflow-hidden">
             {/* Hero Section */}
@@ -15,13 +16,13 @@ export default function AboutPage() {
 
                 <div className="max-w-4xl mx-auto text-center relative z-10 animate-fade-in-up">
                     <h1 className="text-5xl md:text-7xl font-extrabold mb-6 tracking-tight">
-                        Revolutionizing <br />
+                        {t.revolutionizingPrizeSavings.split(" ").slice(0, 1).join(" ")} <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
-                            Prize Savings
+                            {t.revolutionizingPrizeSavings.split(" ").slice(1).join(" ")}
                         </span>
                     </h1>
                     <p className="text-xl md:text-2xl text-blue-100/80 leading-relaxed max-w-2xl mx-auto">
-                        Armina is building the future of lossless lotteries on Base. Save money, earn yield, and win life-changing prizes without risking a penny.
+                        {t.aboutHeroDesc}
                     </p>
                 </div>
             </div>
@@ -31,19 +32,19 @@ export default function AboutPage() {
                 <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                     <div className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
                         <p className="text-4xl md:text-5xl font-bold text-white mb-2">$45K+</p>
-                        <p className="text-blue-200 font-medium">Total Value Locked</p>
+                        <p className="text-blue-200 font-medium">{t.totalValueLocked}</p>
                     </div>
                     <div className="animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
                         <p className="text-4xl md:text-5xl font-bold text-white mb-2">1,892</p>
-                        <p className="text-blue-200 font-medium">Happy Savers</p>
+                        <p className="text-blue-200 font-medium">{t.happySavers}</p>
                     </div>
                     <div className="animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
                         <p className="text-4xl md:text-5xl font-bold text-white mb-2">$1,240</p>
-                        <p className="text-blue-200 font-medium">Prizes Awarded</p>
+                        <p className="text-blue-200 font-medium">{t.prizesAwarded}</p>
                     </div>
                     <div className="animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
                         <p className="text-4xl md:text-5xl font-bold text-white mb-2">0%</p>
-                        <p className="text-blue-200 font-medium">Loss Risk</p>
+                        <p className="text-blue-200 font-medium">{t.lossRisk}</p>
                     </div>
                 </div>
             </div>
@@ -59,12 +60,12 @@ export default function AboutPage() {
                     </div>
 
                     <div className="order-1 md:order-2">
-                        <h2 className="text-4xl font-bold mb-6">Our Mission</h2>
+                        <h2 className="text-4xl font-bold mb-6">{t.ourMission}</h2>
                         <p className="text-lg text-slate-600 mb-6 leading-relaxed">
-                            We believe that saving money should be fun, rewarding, and accessible to everyone. Traditional lotteries are predatory, taking money from those who can least afford it.
+                            {t.missionDesc1}
                         </p>
                         <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                            Armina flips the script. By leveraging DeFi protocols on the Base network, we generate yield from pooled deposits and distribute it as prizes. Your principal is never touched, meaning you never lose money.
+                            {t.missionDesc2}
                         </p>
                         <div className="grid grid-cols-2 gap-6">
                             <div className="flex gap-3">
@@ -72,8 +73,8 @@ export default function AboutPage() {
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-lg">No Loss</h4>
-                                    <p className="text-slate-500">Keep your deposit forever.</p>
+                                    <h4 className="font-bold text-lg">{t.noLoss}</h4>
+                                    <p className="text-slate-500">{t.keepYourDeposit}</p>
                                 </div>
                             </div>
                             <div className="flex gap-3">
@@ -81,8 +82,8 @@ export default function AboutPage() {
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-lg">High Yield</h4>
-                                    <p className="text-slate-500">Powered by Aave & Compound.</p>
+                                    <h4 className="font-bold text-lg">{t.highYield}</h4>
+                                    <p className="text-slate-500">{t.poweredByAave}</p>
                                 </div>
                             </div>
                         </div>
@@ -94,8 +95,8 @@ export default function AboutPage() {
             <div className="py-24 px-6 relative">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-4xl font-bold mb-4">Meet the Team</h2>
-                        <p className="text-blue-200 text-lg">The builders behind Armina.</p>
+                        <h2 className="text-4xl font-bold mb-4">{t.meetTheTeam}</h2>
+                        <p className="text-blue-200 text-lg">{t.teamBuilders}</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -106,8 +107,8 @@ export default function AboutPage() {
                                         #{i}
                                     </div>
                                 </div>
-                                <h3 className="text-xl font-bold mb-1">Team Member {i}</h3>
-                                <p className="text-blue-300 mb-4">Co-Founder & Dev</p>
+                                <h3 className="text-xl font-bold mb-1">{t.teamMember} {i}</h3>
+                                <p className="text-blue-300 mb-4">{t.coFounderDev}</p>
                                 <div className="flex justify-center gap-4">
                                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 cursor-pointer transition-colors">
                                         <span className="text-xs">𝕏</span>
@@ -124,13 +125,13 @@ export default function AboutPage() {
 
             {/* CTA Section */}
             <div className="py-20 px-6 bg-gradient-to-br from-blue-600 to-purple-700 text-center">
-                <h2 className="text-3xl md:text-5xl font-bold mb-6">Ready to start saving?</h2>
+                <h2 className="text-3xl md:text-5xl font-bold mb-6">{t.readyToStartSaving}</h2>
                 <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-                    Join thousands of others who are saving money and winning prizes on Armina.
+                    {t.joinThousands}
                 </p>
                 <Link href="/pool">
                     <button className="px-10 py-5 bg-white text-blue-600 rounded-full font-bold text-xl hover:bg-blue-50 hover:scale-105 transition-all shadow-xl">
-                        Launch App
+                        {t.launchApp2}
                     </button>
                 </Link>
             </div>

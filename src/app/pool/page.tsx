@@ -132,7 +132,7 @@ export default function PoolPage() {
         <>
           {activeTab === "open" && (
             openPools.length === 0 ? (
-              <EmptyState message="No open pools yet. Create one!" />
+              <EmptyState message={t.noOpenPoolsCreate} />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {openPools.map((pool) => (
@@ -150,7 +150,7 @@ export default function PoolPage() {
 
           {activeTab === "active" && (
             activePools.length === 0 ? (
-              <EmptyState message="No active pools yet" />
+              <EmptyState message={t.noActivePools2} />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {activePools.map((pool) => (
@@ -166,7 +166,7 @@ export default function PoolPage() {
 
           {activeTab === "completed" && (
             completedPools.length === 0 ? (
-              <EmptyState message="No completed pools yet" />
+              <EmptyState message={t.noCompletedPools} />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {completedPools.map((pool) => (
@@ -234,22 +234,22 @@ export default function PoolPage() {
                 {/* Payment breakdown */}
                 <div className="p-4 bg-slate-50 rounded-xl space-y-2">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                    Rincian Biaya Join
+                    {t.joinCostBreakdown}
                   </p>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Iuran bulan pertama</span>
+                    <span className="text-slate-500">{t.firstMonthContributionLabel}</span>
                     <span className="font-semibold text-slate-900">
                       {formatIDRX(selectedPool.contribution)} IDRX
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Jaminan (dikembalikan)</span>
+                    <span className="text-slate-500">{t.securityDepositLabel}</span>
                     <span className="font-semibold text-amber-600">
                       {formatIDRX(collateral)} IDRX
                     </span>
                   </div>
                   <div className="flex justify-between text-sm font-bold border-t border-slate-200 pt-2 mt-1">
-                    <span className="text-slate-900">Total yang dibutuhkan</span>
+                    <span className="text-slate-900">{t.totalNeededLabel}</span>
                     <span className="text-[#1e2a4a] text-base">
                       {formatIDRX(totalNeeded)} IDRX
                     </span>
@@ -259,7 +259,7 @@ export default function PoolPage() {
                 {/* Balance status */}
                 <div className={`p-4 rounded-xl border ${canAfford ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-semibold text-slate-700">Balance kamu</span>
+                    <span className="text-sm font-semibold text-slate-700">{t.yourBalanceLbl}</span>
                     <span className={`text-sm font-bold ${canAfford ? "text-green-700" : "text-red-700"}`}>
                       {userBalance !== undefined ? `${formatIDRX(userBalance)} IDRX` : "—"}
                     </span>
@@ -270,14 +270,14 @@ export default function PoolPage() {
                         <>
                           <span className="text-green-600 text-base">✓</span>
                           <span className="text-green-700 text-xs font-medium">
-                            Balance cukup — kamu bisa join pool ini
+                            {t.balanceSufficient}
                           </span>
                         </>
                       ) : (
                         <>
                           <span className="text-red-600 text-base">✗</span>
                           <span className="text-red-700 text-xs font-medium">
-                            Kurang {formatIDRX(shortfall as bigint)} IDRX — claim faucet dulu
+                            {t.shortBy} {formatIDRX(shortfall as bigint)} {t.claimFaucetFirst}
                           </span>
                         </>
                       )}
@@ -303,7 +303,7 @@ export default function PoolPage() {
                   isLoading={isLoading}
                   disabled={isLoading || (userBalance !== undefined && !canAfford)}
                 >
-                  {userBalance !== undefined && !canAfford ? "Balance Tidak Cukup" : t.confirmJoin}
+                  {userBalance !== undefined && !canAfford ? t.insufficientBalance : t.confirmJoin}
                 </Button>
               </div>
             </div>
@@ -326,6 +326,7 @@ function PoolCard({
   isConnected: boolean;
   userBalance?: bigint;
 }) {
+  const { t } = useLanguage();
   const tierConfig = POOL_TIERS[pool.tier];
   const collateral = calculateCollateral(pool.contribution, pool.maxParticipants);
   const totalNeeded = collateral + pool.contribution;
@@ -347,22 +348,22 @@ function PoolCard({
         <div className="flex items-center gap-1.5">
           {canAfford && (
             <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-              ✓ Bisa join
+              {t.canJoinBadge}
             </span>
           )}
           {cannotAfford && (
             <span className="px-1.5 py-0.5 bg-red-100 text-red-600 text-xs font-semibold rounded-full">
-              ✗ Kurang
+              {t.cannotAffordBadge}
             </span>
           )}
           <span className="px-2 py-0.5 bg-[#1e2a4a]/5 text-[#1e2a4a] text-xs font-medium rounded-full">
-            Open
+            {t.openPools}
           </span>
         </div>
       </div>
 
-      {/* Contribution — info utama */}
-      <p className="text-xs text-slate-400 mb-0.5">Iuran/bulan</p>
+      {/* Contribution */}
+      <p className="text-xs text-slate-400 mb-0.5">{t.contributionPerMonth}</p>
       <p className="text-lg font-bold text-slate-900 mb-3">
         {formatIDRX(pool.contribution)} IDRX
       </p>
@@ -370,7 +371,7 @@ function PoolCard({
       {/* Progress bar */}
       <div className="mb-1">
         <div className="flex justify-between text-xs text-slate-500 mb-1">
-          <span>Peserta</span>
+          <span>{t.participants}</span>
           <span className="font-medium text-slate-700">
             {pool.currentParticipants}/{pool.maxParticipants}
           </span>
@@ -385,24 +386,24 @@ function PoolCard({
 
       {/* Total needed to join */}
       <div className="mt-3 mb-2 p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-        <p className="text-xs text-slate-400 mb-0.5">Total untuk join</p>
+        <p className="text-xs text-slate-400 mb-0.5">{t.totalToJoin}</p>
         <p className="text-sm font-bold text-[#1e2a4a]">
           {formatIDRX(totalNeeded)} IDRX
         </p>
         <p className="text-xs text-slate-400 mt-0.5">
-          Jaminan {formatIDRX(collateral)} + iuran {formatIDRX(pool.contribution)}
+          {t.securityDepositShort} {formatIDRX(collateral)} + {t.contribution} {formatIDRX(pool.contribution)}
         </p>
       </div>
 
       {/* Pool ID */}
-      <p className="text-xs text-slate-400 mb-3">#{pool.id.toString()} · {tierConfig.cycleDays}-day cycle</p>
+      <p className="text-xs text-slate-400 mb-3">#{pool.id.toString()} · {tierConfig.cycleDays}{t.daysCycle}</p>
 
       <Button
         className="w-full mt-auto text-sm py-2"
         onClick={onJoin}
         disabled={!isConnected}
       >
-        {!isConnected ? "Connect Wallet" : "Join Pool"}
+        {!isConnected ? t.connectWalletToJoin : t.joinPool}
       </Button>
     </div>
   );
@@ -416,6 +417,7 @@ function ActivePoolCard({
   pool: Pool;
   userAddress: `0x${string}` | undefined;
 }) {
+  const { t } = useLanguage();
   const tierConfig = POOL_TIERS[pool.tier];
   const progress = (pool.currentRound / pool.totalRounds) * 100;
   const { data: participant } = useParticipantInfo(pool.id, userAddress);
@@ -426,12 +428,12 @@ function ActivePoolCard({
       <div className="flex items-center justify-between mb-3">
         <p className="font-semibold text-slate-900 text-sm">{tierConfig.nameId}</p>
         <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-          Active
+          {t.activeStatus}
         </span>
       </div>
 
       {/* Contribution */}
-      <p className="text-xs text-slate-400 mb-0.5">Contribution/month</p>
+      <p className="text-xs text-slate-400 mb-0.5">{t.contributionPerMonth}</p>
       <p className="text-lg font-bold text-slate-900 mb-3">
         {formatIDRX(pool.contribution)}
       </p>
@@ -439,7 +441,7 @@ function ActivePoolCard({
       {/* Round progress */}
       <div className="mb-3">
         <div className="flex justify-between text-xs text-slate-500 mb-1">
-          <span>Round</span>
+          <span>{t.roundLabel}</span>
           <span className="font-medium text-slate-700">
             {pool.currentRound}/{pool.totalRounds}
           </span>
@@ -454,17 +456,17 @@ function ActivePoolCard({
 
       {/* Stats */}
       <div className="flex justify-between text-xs text-slate-500 mb-2">
-        <span>{pool.currentParticipants} participants</span>
+        <span>{pool.currentParticipants} {t.participants}</span>
         {participant?.hasWon ? (
-          <span className="text-green-600 font-semibold">Won!</span>
+          <span className="text-green-600 font-semibold">{t.wonBadge}</span>
         ) : (
-          <span className="text-slate-400">Not won yet</span>
+          <span className="text-slate-400">{t.notWonYet}</span>
         )}
       </div>
 
       {participant && participant.missedPayments > 0 && (
         <p className="text-xs text-red-500 mb-2">
-          {participant.missedPayments} missed payment{participant.missedPayments > 1 ? "s" : ""}
+          {participant.missedPayments} {participant.missedPayments > 1 ? t.missedPaymentText + "s" : t.missedPaymentText}
         </p>
       )}
 
@@ -483,6 +485,7 @@ function CompletedPoolCard({
   pool: Pool;
   userAddress: `0x${string}` | undefined;
 }) {
+  const { t } = useLanguage();
   const tierConfig = POOL_TIERS[pool.tier];
   const { data: participant } = useParticipantInfo(pool.id, userAddress);
 
@@ -492,39 +495,39 @@ function CompletedPoolCard({
       <div className="flex items-center justify-between mb-3">
         <p className="font-semibold text-slate-900 text-sm">{tierConfig.nameId}</p>
         <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">
-          Completed
+          {t.completedStatus}
         </span>
       </div>
 
       {/* Contribution */}
-      <p className="text-xs text-slate-400 mb-0.5">Contribution/month</p>
+      <p className="text-xs text-slate-400 mb-0.5">{t.contributionPerMonth}</p>
       <p className="text-lg font-bold text-slate-900 mb-3">
         {formatIDRX(pool.contribution)}
       </p>
 
       {/* Stats */}
       <div className="flex justify-between text-xs text-slate-500 mb-3">
-        <span>{pool.totalRounds} rounds</span>
-        <span>{pool.currentParticipants} participants</span>
+        <span>{pool.totalRounds} {t.months}</span>
+        <span>{pool.currentParticipants} {t.participants}</span>
       </div>
 
       {/* Participant results */}
       {participant && (
         <div className="space-y-1.5 pt-2 border-t border-slate-200">
           <div className="flex justify-between text-xs">
-            <span className="text-slate-500">Won</span>
+            <span className="text-slate-500">{t.wonResult}</span>
             <span className={`font-semibold ${participant.hasWon ? "text-green-600" : "text-slate-400"}`}>
-              {participant.hasWon ? "Yes" : "No"}
+              {participant.hasWon ? t.yesLabel : t.noLabel}
             </span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-slate-500">Pot received</span>
+            <span className="text-slate-500">{t.potReceived}</span>
             <span className="font-semibold text-slate-900">
               {formatIDRX(participant.potReceived)}
             </span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-slate-500">Yield earned</span>
+            <span className="text-slate-500">{t.yieldEarned}</span>
             <span className="font-semibold text-green-600">
               +{formatIDRX(participant.collateralYieldEarned)}
             </span>

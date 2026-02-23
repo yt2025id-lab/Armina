@@ -23,13 +23,16 @@ export default function ContactPage() {
             <div className="max-w-6xl mx-auto relative z-10">
                 <div className="text-center mb-16 animate-fade-in-up">
                     <span className="inline-block py-1 px-3 rounded-full bg-blue-500/10 text-blue-300 text-sm font-medium mb-4 border border-blue-500/20">
-                        Support & Inquiries
+                        {t.supportInquiries}
                     </span>
                     <h1 className="text-4xl md:text-6xl font-extrabold mb-6">
-                        Get in <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Touch</span>
+                        {t.getInTouch.split(" ").slice(0, -1).join(" ")}{" "}
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                            {t.getInTouch.split(" ").slice(-1)[0]}
+                        </span>
                     </h1>
                     <p className="text-blue-100/80 text-lg max-w-2xl mx-auto leading-relaxed">
-                        Have questions about Armina? Want to partner with us? Or just want to say hi? We'd love to hear from you.
+                        {t.contactHeroDesc}
                     </p>
                 </div>
 
@@ -41,9 +44,9 @@ export default function ContactPage() {
                                 <span className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                                 </span>
-                                Email Us
+                                {t.emailUs}
                             </h3>
-                            <p className="text-blue-100/70 mb-2">For general inquiries and support:</p>
+                            <p className="text-blue-100/70 mb-2">{t.forGeneralInquiries}</p>
                             <a href="mailto:hello@armina.finance" className="text-xl font-semibold text-white hover:text-blue-300 transition-colors">
                                 hello@armina.finance
                             </a>
@@ -54,9 +57,9 @@ export default function ContactPage() {
                                 <span className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                 </span>
-                                Visit Us
+                                {t.visitUs}
                             </h3>
-                            <p className="text-blue-100/70 mb-2">Our headquarters (Dummy Address):</p>
+                            <p className="text-blue-100/70 mb-2">{t.dummyAddressNote}</p>
                             <p className="text-lg font-medium text-white">
                                 123 Blockchain Boulevard,<br />
                                 Crypto Valley, CV 42069
@@ -78,13 +81,13 @@ export default function ContactPage() {
 
                     {/* Contact Form */}
                     <div className="bg-white rounded-[2rem] p-8 md:p-10 text-slate-800 shadow-2xl animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-                        <h3 className="text-3xl font-bold mb-2">Send a Message</h3>
-                        <p className="text-slate-500 mb-8">We usually respond within 24 hours.</p>
+                        <h3 className="text-3xl font-bold mb-2">{t.sendAMessage}</h3>
+                        <p className="text-slate-500 mb-8">{t.weRespond24h}</p>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-2">Name</label>
+                                    <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-2">{t.nameLabel}</label>
                                     <input
                                         type="text"
                                         id="name"
@@ -94,7 +97,7 @@ export default function ContactPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+                                    <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">{t.emailLabel}</label>
                                     <input
                                         type="email"
                                         id="email"
@@ -106,25 +109,25 @@ export default function ContactPage() {
                             </div>
 
                             <div>
-                                <label htmlFor="subject" className="block text-sm font-semibold text-slate-700 mb-2">Subject</label>
+                                <label htmlFor="subject" className="block text-sm font-semibold text-slate-700 mb-2">{t.subjectLabel}</label>
                                 <select
                                     id="subject"
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                                 >
-                                    <option>General Inquiry</option>
-                                    <option>Support Request</option>
-                                    <option>Partnership</option>
-                                    <option>Feedback</option>
+                                    <option>{t.generalInquiry}</option>
+                                    <option>{t.supportRequest}</option>
+                                    <option>{t.partnership}</option>
+                                    <option>{t.feedbackOption}</option>
                                 </select>
                             </div>
 
                             <div>
-                                <label htmlFor="message" className="block text-sm font-semibold text-slate-700 mb-2">Message</label>
+                                <label htmlFor="message" className="block text-sm font-semibold text-slate-700 mb-2">{t.messageLabel}</label>
                                 <textarea
                                     id="message"
                                     rows={4}
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none resize-none"
-                                    placeholder="How can we help you?"
+                                    placeholder={t.howCanWeHelp}
                                     required
                                 ></textarea>
                             </div>
@@ -133,7 +136,7 @@ export default function ContactPage() {
                                 type="submit"
                                 className="w-full py-4 text-lg font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40"
                             >
-                                Send Message
+                                {t.sendMessage}
                             </Button>
                         </form>
                     </div>

@@ -56,6 +56,15 @@ export default function HomePage() {
           >
             ID
           </button>
+          <button
+            onClick={() => setLanguage("zh")}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${language === "zh"
+              ? "bg-white text-[#1d2856]"
+              : "text-white/70 hover:text-white"
+              }`}
+          >
+            中文
+          </button>
         </div>
       </div>
 
@@ -86,23 +95,23 @@ export default function HomePage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                 </span>
-                Protocol Live on Base
+                {t.protocolLiveOnBase}
               </div>
             </div>
 
             {/* Massive Headline */}
             <h1 className="text-6xl md:text-8xl font-extrabold tracking-tight text-white animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-              Save Money. <br className="hidden md:block" />
+              {t.saveMoney} <br className="hidden md:block" />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-300">
-                Win Prizes.
+                {t.winPrizes}
               </span>
             </h1>
 
-            {/* Subheadline (Lorem50 Animated) */}
+            {/* Subheadline */}
             <div className="max-w-3xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               <p className="text-xl md:text-2xl text-blue-100/90 leading-relaxed">
-                <span className="block mb-2 font-semibold text-white/80">The Future of Arisan</span>
-                Experience the evolution of Arisan. Participate in lossless prize savings pools where your deposit earns yield, and you have a fair chance to win the pot—completely risk-free.
+                <span className="block mb-2 font-semibold text-white/80">{t.futureOfArisan}</span>
+                {t.heroDesc}
               </p>
             </div>
 
@@ -110,7 +119,7 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center pt-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
               <Link href="/pool" className="w-full sm:w-auto">
                 <button className="w-full sm:w-auto px-10 py-5 bg-white text-[#1d2856] rounded-full font-bold text-xl hover:bg-blue-50 hover:scale-105 transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)]">
-                  Launch App
+                  {t.launchApp}
                 </button>
               </Link>
               <div className="hidden sm:block">
@@ -127,19 +136,19 @@ export default function HomePage() {
             {/* Stats Bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-6xl mt-12 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
               <div className="p-5 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 text-center">
-                <p className="text-blue-200 text-sm uppercase tracking-wider font-semibold">Total Prizes Awarded</p>
+                <p className="text-blue-200 text-sm uppercase tracking-wider font-semibold">{t.totalPrizesAwarded}</p>
                 <p className="text-3xl md:text-4xl font-bold text-white mt-1">$1,240</p>
               </div>
               <div className="p-5 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 text-center">
-                <p className="text-blue-200 text-sm uppercase tracking-wider font-semibold">Current TVL</p>
+                <p className="text-blue-200 text-sm uppercase tracking-wider font-semibold">{t.currentTvl}</p>
                 <p className="text-3xl md:text-4xl font-bold text-white mt-1">$45K+</p>
               </div>
               <div className="p-5 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 text-center">
-                <p className="text-blue-200 text-sm uppercase tracking-wider font-semibold">Active Pools</p>
+                <p className="text-blue-200 text-sm uppercase tracking-wider font-semibold">{t.activePools}</p>
                 <p className="text-3xl md:text-4xl font-bold text-white mt-1">{activePools.length}</p>
               </div>
               <div className="p-5 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 text-center">
-                <p className="text-blue-200 text-sm uppercase tracking-wider font-semibold">Unique Savers</p>
+                <p className="text-blue-200 text-sm uppercase tracking-wider font-semibold">{t.uniqueSavers}</p>
                 <p className="text-3xl md:text-4xl font-bold text-white mt-1">1,892</p>
               </div>
             </div>
@@ -162,10 +171,10 @@ export default function HomePage() {
               </div>
               <h3 className="text-3xl font-bold text-slate-800 mb-3">{t.howToPlay}</h3>
               <p className="text-slate-500 leading-relaxed mb-6 text-lg">
-                {t.howToPlayDesc} Simply deposit into a pool, and you are instantly eligible to win prizes every week. even if you don't win, you keep your deposit!
+                {t.howToPlayDesc}
               </p>
               <button onClick={showOnboarding} className="text-blue-600 font-bold hover:text-blue-700 flex items-center gap-2 text-lg">
-                Learn More <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                {t.learnMore} <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
               </button>
             </div>
 
@@ -175,20 +184,20 @@ export default function HomePage() {
               <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 h-full">
                 <div className="flex-1">
                   <div className="inline-block px-4 py-1.5 bg-white/20 rounded-full text-sm font-bold mb-4 backdrop-blur-md">
-                    🔥 SUPERCHARGED SAVINGS
+                    🔥 {t.superchargedSavings}
                   </div>
                   <h3 className="text-4xl md:text-5xl font-bold mb-4">{t.aiYieldOptimizer}</h3>
                   <p className="text-blue-100 text-xl mb-8 max-w-lg">
-                    Automatically route your deposits to the highest yielding protocols like Aave and Compound. Customize your risk appetite.
+                    {t.yieldOptimizerDesc}
                   </p>
                   <div className="flex items-center gap-4">
                     <Link href="/optimizer">
                       <button className="px-8 py-4 bg-white text-[#1d2856] rounded-xl font-bold hover:bg-blue-50 transition-colors text-lg">
-                        Start Earning
+                        {t.startEarning}
                       </button>
                     </Link>
                     <div className="text-right">
-                      <p className="text-base text-blue-200">Current APY</p>
+                      <p className="text-base text-blue-200">{t.currentApy}</p>
                       <p className="text-4xl font-bold text-green-400">12.5%</p>
                     </div>
                   </div>
@@ -203,10 +212,10 @@ export default function HomePage() {
             <div className="md:col-span-2 p-8 bg-white rounded-[2rem] shadow-xl border border-slate-100">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-3xl font-bold text-slate-800">Live Pools</h3>
-                  <p className="text-slate-500 text-lg">Join a pool to start winning</p>
+                  <h3 className="text-3xl font-bold text-slate-800">{t.livePools}</h3>
+                  <p className="text-slate-500 text-lg">{t.joinPoolToStart}</p>
                 </div>
-                <Link href="/pool" className="text-blue-600 font-bold hover:underline text-lg">View All</Link>
+                <Link href="/pool" className="text-blue-600 font-bold hover:underline text-lg">{t.viewAll}</Link>
               </div>
 
               {activePools.length > 0 ? (
@@ -218,15 +227,15 @@ export default function HomePage() {
                           <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
                             #{pool.id.toString()}
                           </div>
-                          <span className="px-4 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-bold">LIVE</span>
+                          <span className="px-4 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-bold">{t.liveTag}</span>
                         </div>
                         <div className="space-y-1">
                           <div className="flex justify-between text-base">
-                            <span className="text-slate-500">Prize</span>
+                            <span className="text-slate-500">{t.prize}</span>
                             <span className="font-bold text-slate-800">??? IDRX</span>
                           </div>
                           <div className="flex justify-between text-base">
-                            <span className="text-slate-500">Participants</span>
+                            <span className="text-slate-500">{t.participants}</span>
                             <span className="font-bold text-slate-800 text-right">{pool.currentParticipants}/{pool.maxParticipants}</span>
                           </div>
                         </div>
@@ -236,8 +245,8 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="text-center py-8 bg-slate-50 rounded-2xl">
-                  <p className="text-slate-400 text-lg">No active pools right now.</p>
-                  <Link href="/pool/create" className="text-blue-600 font-bold mt-2 inline-block text-lg">Be the first to create one!</Link>
+                  <p className="text-slate-400 text-lg">{t.noActivePoolsNow}</p>
+                  <Link href="/pool/create" className="text-blue-600 font-bold mt-2 inline-block text-lg">{t.beFirstToCreate}</Link>
                 </div>
               )}
             </div>
@@ -256,7 +265,7 @@ export default function HomePage() {
                 </div>
                 <Link href="/faucet" className="w-full">
                   <button className="w-full py-4 bg-blue-500 hover:bg-blue-600 rounded-xl font-bold transition-colors shadow-lg shadow-blue-500/30 text-lg">
-                    Claim IDRX
+                    {t.claimIdrxBtn}
                   </button>
                 </Link>
               </div>
