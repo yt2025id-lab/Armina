@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Pool, PoolTier } from "@/types";
 import { POOL_TIERS, calculateCollateral, formatIDRX } from "@/lib/constants";
@@ -32,12 +32,35 @@ export default function PoolPage() {
   // Real contract data
   const { openPools, activePools, completedPools, isLoading: isLoadingPools, refetch } = useAllPools();
   const { joinPool, isPending: isJoining, isConfirming: isJoinConfirming } = useArminaPool();
-  const { approve, isPending: isApproving } = useApproveIDRX();
+  const { approve, isPending: isApproving, isSuccess: isApproveSuccess } = useApproveIDRX();
   const { createPool, isPending: isCreating, isConfirming: isCreateConfirming } = useArminaPool();
   const { data: userBalance } = useIDRXBalance(address);
 
   const isLoading = isJoining || isJoinConfirming || isApproving;
   const isCreateLoading = isCreating || isCreateConfirming || isApproving;
+
+  // Track the pool to join after approval is confirmed
+  const pendingJoinPoolId = useRef<bigint | null>(null);
+
+  useEffect(() => {
+    if (isApproveSuccess && pendingJoinPoolId.current !== null) {
+      const poolId = pendingJoinPoolId.current;
+      pendingJoinPoolId.current = null;
+      toast.loading("Joining pool...", { id: "join" });
+      joinPool(poolId)
+        .then(() => {
+          toast.success("Joined pool!", { id: "join" });
+          toast.dismiss("join-approve");
+          setShowJoinModal(false);
+          setSelectedPool(null);
+          refetch();
+        })
+        .catch((error) => {
+          console.error("Error joining pool:", error);
+          toast.error("Failed to join pool", { id: "join" });
+        });
+    }
+  }, [isApproveSuccess]);
 
   const tabs: { id: TabType; label: string }[] = [
     { id: "open", label: t.openPools },
@@ -66,27 +89,13 @@ export default function PoolPage() {
     setShowJoinModal(true);
   };
 
-  const confirmJoinPool = async () => {
+  const confirmJoinPool = () => {
     if (!selectedPool) return;
-    try {
-      const collateral = calculateCollateral(selectedPool.contribution, selectedPool.maxParticipants);
-      const totalDue = collateral + selectedPool.contribution;
-
-      toast.loading("Approving IDRX...", { id: "join-approve" });
-      approve(ARMINA_POOL_ADDRESS, totalDue);
-
-      // After approval, join
-      toast.loading("Joining pool...", { id: "join" });
-      await joinPool(selectedPool.id);
-      toast.success("Joined pool!", { id: "join" });
-      toast.dismiss("join-approve");
-      setShowJoinModal(false);
-      setSelectedPool(null);
-      refetch();
-    } catch (error) {
-      console.error("Error joining pool:", error);
-      toast.error("Failed to join pool", { id: "join" });
-    }
+    const collateral = calculateCollateral(selectedPool.contribution, selectedPool.maxParticipants);
+    const totalDue = collateral + selectedPool.contribution;
+    pendingJoinPoolId.current = selectedPool.id;
+    toast.loading("Approving IDRX...", { id: "join-approve" });
+    approve(ARMINA_POOL_ADDRESS, totalDue);
   };
 
   return (
@@ -239,19 +248,19 @@ export default function PoolPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">{t.firstMonthContributionLabel}</span>
                     <span className="font-semibold text-slate-900">
-                      {formatIDRX(selectedPool.contribution)} IDRX
+                      {formatIDRX(selectedPool.contribution)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">{t.securityDepositLabel}</span>
                     <span className="font-semibold text-amber-600">
-                      {formatIDRX(collateral)} IDRX
+                      {formatIDRX(collateral)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm font-bold border-t border-slate-200 pt-2 mt-1">
                     <span className="text-slate-900">{t.totalNeededLabel}</span>
                     <span className="text-[#1e2a4a] text-base">
-                      {formatIDRX(totalNeeded)} IDRX
+                      {formatIDRX(totalNeeded)}
                     </span>
                   </div>
                 </div>
@@ -261,7 +270,7 @@ export default function PoolPage() {
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-sm font-semibold text-slate-700">{t.yourBalanceLbl}</span>
                     <span className={`text-sm font-bold ${canAfford ? "text-green-700" : "text-red-700"}`}>
-                      {userBalance !== undefined ? `${formatIDRX(userBalance)} IDRX` : "—"}
+                      {userBalance !== undefined ? formatIDRX(userBalance) : "—"}
                     </span>
                   </div>
                   {userBalance !== undefined && (
@@ -365,7 +374,7 @@ function PoolCard({
       {/* Contribution */}
       <p className="text-xs text-slate-400 mb-0.5">{t.contributionPerMonth}</p>
       <p className="text-lg font-bold text-slate-900 mb-3">
-        {formatIDRX(pool.contribution)} IDRX
+        {formatIDRX(pool.contribution)}
       </p>
 
       {/* Progress bar */}
@@ -388,7 +397,7 @@ function PoolCard({
       <div className="mt-3 mb-2 p-2.5 bg-slate-50 rounded-lg border border-slate-100">
         <p className="text-xs text-slate-400 mb-0.5">{t.totalToJoin}</p>
         <p className="text-sm font-bold text-[#1e2a4a]">
-          {formatIDRX(totalNeeded)} IDRX
+          {formatIDRX(totalNeeded)}
         </p>
         <p className="text-xs text-slate-400 mt-0.5">
           {t.securityDepositShort} {formatIDRX(collateral)} + {t.contribution} {formatIDRX(pool.contribution)}

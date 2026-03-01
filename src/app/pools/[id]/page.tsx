@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { usePoolDetails, useParticipantInfo } from "@/hooks/usePoolData";
@@ -28,7 +28,7 @@ export default function PoolDetailsPage({
   const { data: pool, raw: rawPool, isLoading: isPoolLoading } = usePoolDetails(poolId);
   const { data: participant } = useParticipantInfo(poolId, address);
   const { joinPool, requestWinnerDraw, isPending: isActionPending, isConfirming: isActionConfirming, isSuccess: actionSuccess } = useArminaPool();
-  const { approve, isPending: isApproving } = useApproveIDRX();
+  const { approve, isPending: isApproving, isSuccess: isApproveSuccess } = useApproveIDRX();
 
   // Reputation discount
   const { data: collateralDiscountRaw } = useCollateralDiscount(address);
@@ -46,6 +46,24 @@ export default function PoolDetailsPage({
       toast.success(t.transactionSuccessful, { id: "pool-action" });
     }
   }, [actionSuccess, t]);
+
+  // Track pending join to execute after approval is confirmed
+  const pendingJoin = useRef(false);
+
+  useEffect(() => {
+    if (isApproveSuccess && pendingJoin.current) {
+      pendingJoin.current = false;
+      toast.loading(t.joiningPool, { id: "pool-action" });
+      joinPool(poolId)
+        .then(() => {
+          toast.dismiss("approve");
+        })
+        .catch((error) => {
+          console.error("Error joining pool:", error);
+          toast.error("Failed to join pool", { id: "pool-action" });
+        });
+    }
+  }, [isApproveSuccess]);
 
   if (isPoolLoading) {
     return (
@@ -91,23 +109,14 @@ export default function PoolDetailsPage({
   const collateralYield = (Number(collateral) * apy * pool.maxParticipants) / (100 * 12);
   const potYield = (Number(monthlyPot) * apy * pool.maxParticipants) / (100 * 12);
 
-  const handleJoin = async () => {
+  const handleJoin = () => {
     if (!isConnected) {
       toast.error("Please connect your wallet first");
       return;
     }
-
-    try {
-      toast.loading(t.approvingIdrx, { id: "approve" });
-      approve(ARMINA_POOL_ADDRESS, totalDueAtJoin);
-
-      toast.loading(t.joiningPool, { id: "pool-action" });
-      await joinPool(poolId);
-      toast.dismiss("approve");
-    } catch (error) {
-      console.error("Error joining pool:", error);
-      toast.error("Failed to join pool", { id: "pool-action" });
-    }
+    pendingJoin.current = true;
+    toast.loading(t.approvingIdrx, { id: "approve" });
+    approve(ARMINA_POOL_ADDRESS, totalDueAtJoin);
   };
 
   const handleDrawWinner = async () => {

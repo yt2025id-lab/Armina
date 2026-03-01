@@ -4,8 +4,8 @@ import { parseUnits } from "viem";
 // Chain Configuration
 export const BASE_SEPOLIA_CHAIN_ID = 84532;
 
-// IDRX has 2 decimals (like IDR)
-export const IDRX_DECIMALS = 2;
+// IDRX deployed on Base Sepolia uses 18 decimals
+export const IDRX_DECIMALS = 18;
 
 // Pool Tier Configurations
 export const POOL_TIERS: Record<PoolTier, PoolTierConfig> = {
