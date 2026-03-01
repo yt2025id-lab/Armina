@@ -112,18 +112,18 @@ export function Header() {
 
   const formatBalance = (bal: bigint | undefined) => {
     if (!bal) return "0";
-    const idrxInt = bal / 100n; // integer IDRX, avoid Number precision loss
-    if (idrxInt >= 1_000_000_000_000n) {
-      return `${(idrxInt / 1_000_000_000_000n).toString()}T`;
+    const idrxInt = bal / BigInt(100); // integer IDRX, avoid Number precision loss
+    if (idrxInt >= BigInt("1000000000000")) {
+      return `${(idrxInt / BigInt("1000000000000")).toString()}T`;
     }
-    if (idrxInt >= 1_000_000_000n) {
-      return `${(idrxInt / 1_000_000_000n).toString()}B`;
+    if (idrxInt >= BigInt("1000000000")) {
+      return `${(idrxInt / BigInt("1000000000")).toString()}B`;
     }
-    if (idrxInt >= 1_000_000n) {
-      return `${(idrxInt / 1_000_000n).toString()}M`;
+    if (idrxInt >= BigInt("1000000")) {
+      return `${(idrxInt / BigInt("1000000")).toString()}M`;
     }
-    if (idrxInt >= 1_000n) {
-      return `${(idrxInt / 1_000n).toString()}K`;
+    if (idrxInt >= BigInt("1000")) {
+      return `${(idrxInt / BigInt("1000")).toString()}K`;
     }
     return idrxInt.toString();
   };

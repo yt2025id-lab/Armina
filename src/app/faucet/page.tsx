@@ -58,7 +58,7 @@ export default function FaucetPage() {
 
   const formatBalance = (bal: bigint | undefined) => {
     if (!bal) return "0";
-    const idrxInt = bal / 100n; // integer IDRX, avoid Number precision loss
+    const idrxInt = bal / BigInt(100); // integer IDRX, avoid Number precision loss
     return new Intl.NumberFormat("id-ID").format(idrxInt);
   };
 
