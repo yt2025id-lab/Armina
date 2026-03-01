@@ -10,7 +10,7 @@ import { useCollateralDiscount } from "@/hooks/useReputation";
 import { useYieldData } from "@/hooks/useYieldData";
 import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
 import { formatIDRX, calculateCollateral, formatAddress } from "@/lib/constants";
-import { waitForTransactionReceipt } from "@wagmi/core";
+import { waitForTransactionReceipt } from "wagmi/actions";
 import { config } from "@/lib/wagmi";
 import toast from "react-hot-toast";
 import { useLanguage } from "@/components/providers";

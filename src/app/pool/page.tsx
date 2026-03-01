@@ -13,7 +13,7 @@ import { useArminaPool } from "@/hooks/useArminaPool";
 import { useApproveIDRX, useIDRXBalance } from "@/hooks/useIDRX";
 import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
 import { parseUnits } from "viem";
-import { waitForTransactionReceipt } from "@wagmi/core";
+import { waitForTransactionReceipt } from "wagmi/actions";
 import { config } from "@/lib/wagmi";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
