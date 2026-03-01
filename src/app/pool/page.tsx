@@ -2,19 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pool, PoolTier } from "@/types";
+import { Pool } from "@/types";
 import { POOL_TIERS, calculateCollateral, formatIDRX } from "@/lib/constants";
 import { Button } from "@/components/ui/Button";
-import { PoolTierSelector } from "@/components/pool/PoolTierSelector";
 import { ListSkeleton } from "@/components/ui/LoadingSkeleton";
 import { useLanguage } from "@/components/providers";
 import { useAllPools, useParticipantInfo } from "@/hooks/usePoolData";
 import { useArminaPool } from "@/hooks/useArminaPool";
 import { useApproveIDRX, useIDRXBalance } from "@/hooks/useIDRX";
 import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
-import { parseUnits } from "viem";
 import { waitForTransactionReceipt } from "wagmi/actions";
-import { config } from "@/lib/wagmi";
+import { useConfig } from "wagmi";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -24,22 +22,19 @@ export default function PoolPage() {
   const { address, isConnected } = useAuth();
   const router = useRouter();
   const { t } = useLanguage();
+  const wagmiConfig = useConfig();
   const [activeTab, setActiveTab] = useState<TabType>("open");
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
-  const [selectedTier, setSelectedTier] = useState<PoolTier | null>(null);
-  const [participantCount, setParticipantCount] = useState(5);
+  const [isJoiningPool, setIsJoiningPool] = useState(false);
 
   // Real contract data
   const { openPools, activePools, completedPools, isLoading: isLoadingPools, refetch } = useAllPools();
-  const { joinPool, isPending: isJoining, isConfirming: isJoinConfirming } = useArminaPool();
-  const { approve, isPending: isApproving } = useApproveIDRX();
-  const { createPool, isPending: isCreating, isConfirming: isCreateConfirming } = useArminaPool();
+  const { joinPool } = useArminaPool();
+  const { approve } = useApproveIDRX();
   const { data: userBalance } = useIDRXBalance(address);
 
-  const isLoading = isJoining || isJoinConfirming || isApproving;
-  const isCreateLoading = isCreating || isCreateConfirming || isApproving;
+  const isLoading = isJoiningPool;
 
 
   const tabs: { id: TabType; label: string }[] = [
@@ -48,22 +43,6 @@ export default function PoolPage() {
     { id: "completed", label: t.completedPools },
   ];
 
-  const handleCreatePool = async () => {
-    if (!selectedTier) return;
-    try {
-      const tier = POOL_TIERS[selectedTier];
-      const monthlyAmount = tier.contribution;
-      const collateral = calculateCollateral(monthlyAmount, participantCount);
-      const totalDue = collateral + monthlyAmount;
-
-      toast.loading("Approving IDRX...", { id: "approve" });
-      approve(ARMINA_POOL_ADDRESS, totalDue);
-    } catch (error) {
-      console.error("Error creating pool:", error);
-      toast.error("Failed to create pool");
-    }
-  };
-
   const handleJoinPool = (pool: Pool) => {
     setSelectedPool(pool);
     setShowJoinModal(true);
@@ -71,26 +50,40 @@ export default function PoolPage() {
 
   const confirmJoinPool = async () => {
     if (!selectedPool) return;
+    setIsJoiningPool(true);
+    const poolId = selectedPool.id;
     try {
       const collateral = calculateCollateral(selectedPool.contribution, selectedPool.maxParticipants);
       const totalDue = collateral + selectedPool.contribution;
 
-      toast.loading("Approving IDRX...", { id: "join" });
-      const hash = await approve(ARMINA_POOL_ADDRESS, totalDue);
-      if (!hash) throw new Error("Approval failed");
+      // Step 1: Approve
+      toast.loading("(1/3) Approve IDRX di wallet kamu...", { id: "join" });
+      const approveHash = await approve(ARMINA_POOL_ADDRESS, totalDue);
+      if (!approveHash) throw new Error("Approval dibatalkan atau gagal");
 
-      await waitForTransactionReceipt(config, { hash });
+      // Step 2: Wait for approval confirmation
+      toast.loading("(2/3) Menunggu konfirmasi approval...", { id: "join" });
+      await waitForTransactionReceipt(wagmiConfig, { hash: approveHash });
 
-      toast.loading("Joining pool...", { id: "join" });
-      await joinPool(selectedPool.id);
-      toast.success("Joined pool!", { id: "join" });
+      // Step 3: Join pool
+      toast.loading("(3/3) Konfirmasi join pool di wallet kamu...", { id: "join" });
+      const joinHash = await joinPool(poolId);
+
+      toast.loading("Menunggu transaksi selesai...", { id: "join" });
+      await waitForTransactionReceipt(wagmiConfig, { hash: joinHash as `0x${string}` });
+
+      toast.success("Berhasil join pool! Kamu sudah terdaftar.", { id: "join", duration: 6000 });
       setShowJoinModal(false);
       setSelectedPool(null);
       refetch();
+      // Redirect ke detail pool agar user bisa lihat partisipasinya
+      router.push(`/pools/${poolId.toString()}`);
     } catch (error: any) {
       console.error("Error joining pool:", error);
-      const msg = error?.shortMessage || error?.message || "Failed to join pool";
-      toast.error(msg, { id: "join" });
+      const msg = error?.shortMessage || error?.message || "Gagal join pool";
+      toast.error(msg, { id: "join", duration: 6000 });
+    } finally {
+      setIsJoiningPool(false);
     }
   };
 

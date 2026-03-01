@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { usePoolDetails, useParticipantInfo } from "@/hooks/usePoolData";
@@ -11,7 +11,7 @@ import { useYieldData } from "@/hooks/useYieldData";
 import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
 import { formatIDRX, calculateCollateral, formatAddress } from "@/lib/constants";
 import { waitForTransactionReceipt } from "wagmi/actions";
-import { config } from "@/lib/wagmi";
+import { useConfig } from "wagmi";
 import toast from "react-hot-toast";
 import { useLanguage } from "@/components/providers";
 
@@ -25,11 +25,12 @@ export default function PoolDetailsPage({
   const router = useRouter();
   const { address, isConnected } = useAuth();
   const { t } = useLanguage();
+  const wagmiConfig = useConfig();
 
   // Real contract data
-  const { data: pool, raw: rawPool, isLoading: isPoolLoading } = usePoolDetails(poolId);
-  const { data: participant } = useParticipantInfo(poolId, address);
-  const { joinPool, requestWinnerDraw, isPending: isActionPending, isConfirming: isActionConfirming, isSuccess: actionSuccess } = useArminaPool();
+  const { data: pool, isLoading: isPoolLoading, refetch: refetchPool } = usePoolDetails(poolId);
+  const { data: participant, refetch: refetchParticipant } = useParticipantInfo(poolId, address);
+  const { joinPool, requestWinnerDraw, isPending: isActionPending, isConfirming: isActionConfirming } = useArminaPool();
   const { approve, isPending: isApproving } = useApproveIDRX();
 
   // Reputation discount
@@ -43,11 +44,6 @@ export default function PoolDetailsPage({
 
   const isJoining = isActionPending || isActionConfirming || isApproving;
 
-  useEffect(() => {
-    if (actionSuccess) {
-      toast.success(t.transactionSuccessful, { id: "pool-action" });
-    }
-  }, [actionSuccess, t]);
 
 
   if (isPoolLoading) {
@@ -92,27 +88,38 @@ export default function PoolDetailsPage({
   // Live APY calculations
   const apy = displayAPY;
   const collateralYield = (Number(collateral) * apy * pool.maxParticipants) / (100 * 12);
-  const potYield = (Number(monthlyPot) * apy * pool.maxParticipants) / (100 * 12);
 
   const handleJoin = async () => {
     if (!isConnected) {
-      toast.error("Please connect your wallet first");
+      toast.error("Hubungkan wallet kamu terlebih dahulu");
       return;
     }
     try {
-      toast.loading(t.approvingIdrx, { id: "pool-action" });
-      const hash = await approve(ARMINA_POOL_ADDRESS, totalDueAtJoin);
-      if (!hash) throw new Error("Approval failed");
+      // Step 1: Approve
+      toast.loading("(1/3) Approve IDRX di wallet kamu...", { id: "pool-action" });
+      const approveHash = await approve(ARMINA_POOL_ADDRESS, totalDueAtJoin);
+      if (!approveHash) throw new Error("Approval dibatalkan atau gagal");
 
-      await waitForTransactionReceipt(config, { hash });
+      // Step 2: Wait for approval on-chain
+      toast.loading("(2/3) Menunggu konfirmasi approval...", { id: "pool-action" });
+      await waitForTransactionReceipt(wagmiConfig, { hash: approveHash });
 
-      toast.loading(t.joiningPool, { id: "pool-action" });
-      await joinPool(poolId);
-      toast.success(t.transactionSuccessful, { id: "pool-action" });
+      // Step 3: Join pool
+      toast.loading("(3/3) Konfirmasi join pool di wallet kamu...", { id: "pool-action" });
+      const joinHash = await joinPool(poolId);
+
+      toast.loading("Menunggu transaksi selesai...", { id: "pool-action" });
+      await waitForTransactionReceipt(wagmiConfig, { hash: joinHash as `0x${string}` });
+
+      toast.success("Berhasil join pool! Selamat bergabung.", { id: "pool-action", duration: 6000 });
+
+      // Refresh data so participation section appears immediately
+      refetchPool();
+      refetchParticipant();
     } catch (error: any) {
       console.error("Error joining pool:", error);
-      const msg = error?.shortMessage || error?.message || "Failed to join pool";
-      toast.error(msg, { id: "pool-action" });
+      const msg = error?.shortMessage || error?.message || "Gagal join pool";
+      toast.error(msg, { id: "pool-action", duration: 6000 });
     }
   };
 
