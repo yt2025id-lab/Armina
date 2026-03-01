@@ -6,7 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
 import { useChainId, useSwitchChain } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
-import { useClaimFaucet, useIDRXBalance } from "@/hooks/useIDRX";
+import { formatUnits } from "viem";
+import { useClaimFaucet, useIDRXBalance, useIDRXDecimals } from "@/hooks/useIDRX";
 import { useLanguage } from "@/components/providers";
 
 export default function FaucetPage() {
@@ -14,6 +15,7 @@ export default function FaucetPage() {
   const { address, isConnected } = useAuth();
   const { claimFaucet, isPending, isConfirming, isSuccess, error } = useClaimFaucet();
   const { data: balance, refetch } = useIDRXBalance(address);
+  const { data: idrxDecimals } = useIDRXDecimals();
   const [lastClaimed, setLastClaimed] = useState<Date | null>(null);
   const [claimCount, setClaimCount] = useState(0);
   const { t } = useLanguage();
@@ -35,6 +37,8 @@ export default function FaucetPage() {
     if (error) {
       toast.dismiss("claim");
       const msg = (error as any)?.shortMessage || (error as any)?.message || "Failed to claim IDRX";
+      // Skip chain mismatch errors — UI already shows the Switch Network banner
+      if (msg.toLowerCase().includes("chain") || msg.toLowerCase().includes("network")) return;
       toast.error(msg);
     }
   }, [error]);
@@ -58,8 +62,9 @@ export default function FaucetPage() {
 
   const formatBalance = (bal: bigint | undefined) => {
     if (!bal) return "0";
-    const idrxInt = bal / BigInt(100); // integer IDRX, avoid Number precision loss
-    return new Intl.NumberFormat("id-ID").format(idrxInt);
+    const decimals = Number(idrxDecimals ?? 18);
+    const idrxFloat = parseFloat(formatUnits(bal, decimals));
+    return new Intl.NumberFormat("id-ID").format(Math.floor(idrxFloat));
   };
 
   return (

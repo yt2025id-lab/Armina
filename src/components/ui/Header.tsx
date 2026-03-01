@@ -1,7 +1,7 @@
 "use client";
 
 import { formatUnits } from "viem";
-import { useIDRXBalance } from "@/hooks/useIDRX";
+import { useIDRXBalance, useIDRXDecimals } from "@/hooks/useIDRX";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -21,6 +21,7 @@ export function Header() {
   const isHomePage = pathname === "/";
   const { address, isConnected: isUserConnected } = useAuth();
   const { data: balance, isLoading } = useIDRXBalance(address);
+  const { data: idrxDecimals } = useIDRXDecimals();
   const { data: ethBalance } = useBalance({
     address: address,
     chainId: baseSepolia.id,
@@ -112,19 +113,12 @@ export function Header() {
 
   const formatBalance = (bal: bigint | undefined) => {
     if (!bal) return "0";
-    const idrxInt = bal / BigInt(100); // integer IDRX, avoid Number precision loss
-    if (idrxInt >= BigInt("1000000000000")) {
-      return `${(idrxInt / BigInt("1000000000000")).toString()}T`;
-    }
-    if (idrxInt >= BigInt("1000000000")) {
-      return `${(idrxInt / BigInt("1000000000")).toString()}B`;
-    }
-    if (idrxInt >= BigInt("1000000")) {
-      return `${(idrxInt / BigInt("1000000")).toString()}M`;
-    }
-    if (idrxInt >= BigInt("1000")) {
-      return `${(idrxInt / BigInt("1000")).toString()}K`;
-    }
+    const decimals = Number(idrxDecimals ?? 18);
+    const idrxInt = Math.floor(parseFloat(formatUnits(bal, decimals)));
+    if (idrxInt >= 1_000_000_000_000) return `${Math.floor(idrxInt / 1_000_000_000_000)}T`;
+    if (idrxInt >= 1_000_000_000) return `${Math.floor(idrxInt / 1_000_000_000)}B`;
+    if (idrxInt >= 1_000_000) return `${Math.floor(idrxInt / 1_000_000)}M`;
+    if (idrxInt >= 1_000) return `${Math.floor(idrxInt / 1_000)}K`;
     return idrxInt.toString();
   };
 

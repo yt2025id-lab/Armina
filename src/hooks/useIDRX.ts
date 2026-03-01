@@ -4,6 +4,18 @@ import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 
 import { baseSepolia } from "wagmi/chains";
 import { IDRX_ABI, CONTRACTS } from "@/contracts/abis";
 
+export function useIDRXDecimals() {
+  return useReadContract({
+    address: CONTRACTS.IDRX,
+    abi: IDRX_ABI,
+    functionName: "decimals",
+    query: {
+      enabled: !!CONTRACTS.IDRX,
+      staleTime: Infinity,
+    },
+  });
+}
+
 export function useIDRXBalance(address: `0x${string}` | undefined) {
   return useReadContract({
     address: CONTRACTS.IDRX,
