@@ -6,31 +6,34 @@ import { useAuth } from "@/hooks/useAuth";
 import { parseUnits } from "viem";
 import toast from "react-hot-toast";
 import { useArminaPool } from "@/hooks/useArminaPool";
-import { useApproveIDRX, useIDRXBalance } from "@/hooks/useIDRX";
-import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
+import { useIDRXBalance } from "@/hooks/useIDRX";
 import { useLanguage } from "@/components/providers";
+import { waitForTransactionReceipt } from "wagmi/actions";
+import { useConfig } from "wagmi";
 
-// Common monthly amounts (in IDRX) — labels are currency shorthand, not translatable
+// Common monthly amounts (in IDRX) — testnet-friendly values
+// IDRX uses 2 decimals. Faucet memberi 500,000 IDRX per klaim.
 const COMMON_AMOUNTS = [
-  { value: 100000, label: "100K" },
-  { value: 250000, label: "250K" },
-  { value: 500000, label: "500K" },
-  { value: 1000000, label: "1M" },
-  { value: 2500000, label: "2.5M" },
+  { value: 100, label: "100" },
+  { value: 500, label: "500" },
+  { value: 1000, label: "1K" },
+  { value: 5000, label: "5K" },
+  { value: 10000, label: "10K" },
 ];
 
 export default function CreatePoolPage() {
   const router = useRouter();
   const { address, isConnected } = useAuth();
-  const { createPool, isPending, isConfirming, isSuccess } = useArminaPool();
-  const { approve, isPending: isApproving, isSuccess: approveSuccess } = useApproveIDRX();
+  const wagmiConfig = useConfig();
+  const { createPool, isPending, isSuccess } = useArminaPool();
   const { data: balance } = useIDRXBalance(address);
   const { t } = useLanguage();
 
-  const [poolSize, setPoolSize] = useState<number>(10);
-  const [monthlyAmount, setMonthlyAmount] = useState<number>(500000);
+  const [poolSize, setPoolSize] = useState<number>(5);
+  const [monthlyAmount, setMonthlyAmount] = useState<number>(100);
   const [customAmount, setCustomAmount] = useState<string>("");
   const [useCustom, setUseCustom] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Pool size options inside component to access t
   const POOL_SIZE_OPTIONS = [
@@ -40,7 +43,7 @@ export default function CreatePoolPage() {
     { size: 20, label: `20 ${t.people}`, description: t.poolSizeDesc20 },
   ];
 
-  // Calculate derived values (in IDRX, not wei)
+  // Calculate derived values (in IDRX, not raw units)
   const finalAmount = useCustom && customAmount ? parseInt(customAmount) : monthlyAmount;
   const collateralRequired = Math.floor((finalAmount * poolSize * 125) / 100);
   const totalDueAtJoin = collateralRequired + finalAmount;
@@ -54,43 +57,32 @@ export default function CreatePoolPage() {
       toast.error("Please connect your wallet first");
       return;
     }
+    if (finalAmount <= 0) {
+      toast.error("Masukkan jumlah kontribusi yang valid");
+      return;
+    }
 
+    setIsCreating(true);
     try {
-      const approvalAmount = parseUnits(totalDueAtJoin.toString(), 2);
-      toast.loading("Approving IDRX...", { id: "approve" });
-      approve(ARMINA_POOL_ADDRESS, approvalAmount);
-    } catch (error) {
+      // createPool TIDAK memerlukan approve IDRX.
+      // Tidak ada transfer IDRX saat membuat pool — hanya ETH untuk gas.
+      const monthlyAmountWei = parseUnits(finalAmount.toString(), 2);
+      toast.loading("Konfirmasi pembuatan pool di wallet kamu...", { id: "create" });
+      const hash = await createPool(monthlyAmountWei, poolSize);
+
+      toast.loading("Menunggu transaksi selesai...", { id: "create" });
+      await waitForTransactionReceipt(wagmiConfig, { hash: hash as `0x${string}` });
+
+      toast.success("Pool berhasil dibuat!", { id: "create", duration: 5000 });
+      setTimeout(() => router.push("/pool"), 1500);
+    } catch (error: any) {
       console.error("Error creating pool:", error);
-      toast.error("Failed to create pool. Please try again.");
+      const msg = error?.shortMessage || error?.message || "Gagal membuat pool";
+      toast.error(msg, { id: "create", duration: 6000 });
+    } finally {
+      setIsCreating(false);
     }
   };
-
-  // Auto-create pool after approval succeeds
-  useEffect(() => {
-    if (approveSuccess && !isPending && !isConfirming && !isSuccess) {
-      const createPoolAfterApproval = async () => {
-        try {
-          toast.success("Approval confirmed!", { id: "approve" });
-          toast.loading("Creating pool...", { id: "create" });
-          const monthlyAmountWei = parseUnits(finalAmount.toString(), 2);
-          await createPool(monthlyAmountWei, poolSize);
-        } catch (error) {
-          console.error("Error creating pool:", error);
-          toast.error("Failed to create pool", { id: "create" });
-        }
-      };
-      createPoolAfterApproval();
-    }
-  }, [approveSuccess, isPending, isConfirming, isSuccess, finalAmount, poolSize, createPool]);
-
-  // Navigate after successful pool creation
-  useEffect(() => {
-    if (isSuccess) {
-      toast.success("Pool created successfully!", { id: "create" });
-      const timer = setTimeout(() => router.push("/pool"), 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [isSuccess, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -115,11 +107,10 @@ export default function CreatePoolPage() {
               <button
                 key={option.size}
                 onClick={() => setPoolSize(option.size)}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  poolSize === option.size
+                className={`p-4 rounded-xl border-2 transition-all ${poolSize === option.size
                     ? "border-[#1e2a4a] bg-[#1e2a4a]/5"
                     : "border-slate-200 bg-white hover:border-[#1e2a4a]/30"
-                }`}
+                  }`}
               >
                 <div className="text-left">
                   <p className="font-bold text-[#1e2a4a]">{option.label}</p>
@@ -146,11 +137,10 @@ export default function CreatePoolPage() {
                   <button
                     key={amount.value}
                     onClick={() => setMonthlyAmount(amount.value)}
-                    className={`py-3 px-4 rounded-xl border-2 font-semibold transition-all ${
-                      monthlyAmount === amount.value
+                    className={`py-3 px-4 rounded-xl border-2 font-semibold transition-all ${monthlyAmount === amount.value
                         ? "border-[#1e2a4a] bg-[#1e2a4a] text-white"
                         : "border-slate-200 bg-white text-slate-700 hover:border-[#1e2a4a]/30"
-                    }`}
+                      }`}
                   >
                     {amount.label}
                   </button>
@@ -258,9 +248,10 @@ export default function CreatePoolPage() {
             </div>
           </div>
 
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-xs text-amber-800">
-              <strong>{t.noteLabel}</strong> {t.collateralNote}
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs text-blue-800">
+              <strong>💡 Info:</strong> Membuat pool gratis (hanya bayar gas ETH).
+              Kamu perlu punya {formatIDRX(totalDueAtJoin)} IDRX saat bergabung ke pool.
             </p>
           </div>
         </div>
@@ -299,18 +290,14 @@ export default function CreatePoolPage() {
         {/* Create Button */}
         <button
           onClick={handleCreate}
-          disabled={!isConnected || finalAmount === 0 || isPending || isConfirming || isApproving}
+          disabled={!isConnected || finalAmount <= 0 || isCreating}
           className="w-full py-4 px-6 bg-gradient-to-r from-[#1e2a4a] to-[#2a3a5c] text-white rounded-xl font-bold hover:from-[#2a3a5c] hover:to-[#1e2a4a] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
         >
           {!isConnected
             ? t.connectWalletToContinue
-            : isApproving
-            ? t.approvingIdrx
-            : isPending
-            ? t.creatingPool
-            : isConfirming
-            ? t.confirming
-            : t.createPool}
+            : isCreating
+              ? "Membuat Pool..."
+              : t.createPool}
         </button>
 
         {isConnected && (

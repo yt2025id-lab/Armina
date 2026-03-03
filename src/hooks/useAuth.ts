@@ -1,32 +1,31 @@
 "use client";
 
-import { useAccount, useDisconnect } from "wagmi";
-import { usePrivy } from "@privy-io/react-auth";
+import { useAccount, useDisconnect, useConnect } from "wagmi";
+import { coinbaseWallet } from "wagmi/connectors";
 
 /**
- * Unified auth hook that combines Privy (email/Google) and wagmi (wallet) state.
- * Use this instead of raw useAccount() to properly detect Privy email logins.
+ * Simple auth hook using wagmi only (Coinbase Wallet EOA).
+ * Privy sudah dihapus — tidak diperlukan untuk hackathon ini.
  */
 export function useAuth() {
-  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated, user, ready, logout, login } = usePrivy();
-  const { disconnect: wagmiDisconnect } = useDisconnect();
+  const { address, isConnected, isConnecting } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { connect } = useConnect();
 
-  // Use Privy embedded wallet address as fallback
-  const address = wagmiAddress || (user?.wallet?.address as `0x${string}` | undefined);
-  const isConnected = ready && (authenticated || wagmiConnected);
-
-  const disconnect = () => {
-    wagmiDisconnect();
-    logout();
-  };
+  const login = () =>
+    connect({
+      connector: coinbaseWallet({
+        appName: "Armina - Arisan Mini App",
+        preference: "eoaOnly",
+      }),
+    });
 
   return {
     address,
     isConnected,
-    ready,
-    authenticated,
-    wagmiConnected,
+    ready: !isConnecting,
+    authenticated: isConnected,
+    wagmiConnected: isConnected,
     login,
     disconnect,
   };

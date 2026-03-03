@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 import { OnchainKitProvider as OnchainKitBase } from "@coinbase/onchainkit";
 import { baseSepolia } from "wagmi/chains";
 
-// Note: WagmiProvider and QueryClientProvider are handled by PrivyProvider
+// Note: WagmiProvider and QueryClientProvider are handled by WagmiProvider
 // This component only wraps OnchainKit for UI components
 export function OnchainKitProvider({ children }: { children: ReactNode }) {
   return (

@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/Button";
 import { ListSkeleton } from "@/components/ui/LoadingSkeleton";
 import { useLanguage } from "@/components/providers";
 import { useAllPools, useParticipantInfo } from "@/hooks/usePoolData";
-import { useArminaPool } from "@/hooks/useArminaPool";
+import { useArminaPool, useCollateralMultiplier } from "@/hooks/useArminaPool";
 import { useApproveIDRX, useIDRXBalance } from "@/hooks/useIDRX";
 import { ARMINA_POOL_ADDRESS } from "@/contracts/config";
-import { waitForTransactionReceipt } from "wagmi/actions";
+import { ARMINA_POOL_ABI } from "@/contracts/abis";
+import { waitForTransactionReceipt, readContract, simulateContract } from "wagmi/actions";
 import { useConfig } from "wagmi";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,7 +33,10 @@ export default function PoolPage() {
   const { openPools, activePools, completedPools, isLoading: isLoadingPools, refetch } = useAllPools();
   const { joinPool } = useArminaPool();
   const { approve } = useApproveIDRX();
+  // userBalance: raw balance dari chain (2 desimal), bandingkan dengan pool amounts (juga 2 desimal)
   const { data: userBalance } = useIDRXBalance(address);
+  // Baca dynamic collateral multiplier dari contract (125 normal, 150 jika price feed stale)
+  const { multiplier: collateralMultiplier } = useCollateralMultiplier();
 
   const isLoading = isJoiningPool;
 
@@ -53,24 +57,142 @@ export default function PoolPage() {
     setIsJoiningPool(true);
     const poolId = selectedPool.id;
     try {
-      const collateral = calculateCollateral(selectedPool.contribution, selectedPool.maxParticipants);
-      const totalDue = collateral + selectedPool.contribution;
+      // Hitung collateral dengan multiplier dari contract (2 desimal IDRX)
+      const multiplier = BigInt(collateralMultiplier);
+      const collateral =
+        (selectedPool.contribution * BigInt(selectedPool.maxParticipants) * multiplier) / BigInt(100);
+      // Amount yang BENAR-BENAR dibutuhkan contract (tanpa buffer)
+      const totalRequired = collateral + selectedPool.contribution;
+      // Amount yang di-approve (dengan buffer 1% agar tidak kurang karena rounding)
+      const collateralWithBuffer = (collateral * BigInt(101)) / BigInt(100);
+      const totalDue = collateralWithBuffer + selectedPool.contribution;
 
-      // Step 1: Approve
+      console.log(`[JoinPool] Pool ID: ${poolId.toString()}`);
+      console.log(`[JoinPool] Contribution: ${selectedPool.contribution.toString()} raw = ${Number(selectedPool.contribution) / 100} IDRX`);
+      console.log(`[JoinPool] Multiplier: ${collateralMultiplier}%`);
+      console.log(`[JoinPool] Total dibutuhkan contract: ${totalRequired.toString()} raw = ${Number(totalRequired) / 100} IDRX`);
+      console.log(`[JoinPool] Approve amount (+ 1% buffer): ${totalDue.toString()} raw`);
+      console.log(`[JoinPool] User balance: ${userBalance?.toString()} raw = ${userBalance ? Number(userBalance) / 100 : '?'} IDRX`);
+
+      // Preflight check: beri error jelas sebelum kirim tx ke wallet
+      if (userBalance !== undefined && userBalance < totalRequired) {
+        const shortfall = totalRequired - userBalance;
+        throw new Error(
+          `Saldo IDRX tidak cukup. Dibutuhkan: ${Number(totalRequired) / 100} IDRX, ` +
+          `saldo kamu: ${Number(userBalance) / 100} IDRX. ` +
+          `Kurang: ${Number(shortfall) / 100} IDRX. Klaim di faucet dulu.`
+        );
+      }
+
+      // Baca alamat IDRX token yang digunakan pool (immutable, bisa berbeda dari env config)
+      const poolIdrxToken = await readContract(wagmiConfig, {
+        address: ARMINA_POOL_ADDRESS,
+        abi: ARMINA_POOL_ABI as any,
+        functionName: "idrxToken",
+      }) as `0x${string}`;
+      console.log(`[JoinPool] Pool idrxToken on-chain: ${poolIdrxToken}`);
+
+      // Step 1: Approve IDRX ke ArminaPool.
+      // Approve langsung ke poolIdrxToken (bukan env IDRX_ADDRESS) untuk memastikan
+      // address-nya sama persis dengan yang digunakan contract saat safeTransferFrom.
+      const MAX_UINT256 = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
       toast.loading("(1/3) Approve IDRX di wallet kamu...", { id: "join" });
-      const approveHash = await approve(ARMINA_POOL_ADDRESS, totalDue);
+      const approveHash = await approve(ARMINA_POOL_ADDRESS, MAX_UINT256, poolIdrxToken);
       if (!approveHash) throw new Error("Approval dibatalkan atau gagal");
 
-      // Step 2: Wait for approval confirmation
+      // Step 2: Tunggu konfirmasi approval on-chain + verifikasi allowance
       toast.loading("(2/3) Menunggu konfirmasi approval...", { id: "join" });
-      await waitForTransactionReceipt(wagmiConfig, { hash: approveHash });
+      await waitForTransactionReceipt(wagmiConfig, { hash: approveHash, confirmations: 2 });
 
-      // Step 3: Join pool
+      // RACE CONDITION FIX: Setelah receipt, tunggu 2 detik agar state
+      // fully committed di semua nodes sebelum submit joinPool.
+      toast.loading("(2.5/3) Memverifikasi approval on-chain...", { id: "join" });
+      await new Promise(r => setTimeout(r, 2000));
+
+      // Verifikasi allowance pada kontrak IDRX yang sama dengan yang digunakan pool
+      const { IDRX_ABI } = await import("@/contracts/abis");
+      let currentAllowance = await readContract(wagmiConfig, {
+        address: poolIdrxToken,
+        abi: IDRX_ABI,
+        functionName: "allowance",
+        args: [address as `0x${string}`, ARMINA_POOL_ADDRESS],
+      }) as bigint;
+
+      console.log("[JoinPool] Allowance after approve:", currentAllowance.toString());
+
+      // Jika allowance belum terlihat, retry setelah 3 detik lagi
+      if (currentAllowance === 0n) {
+        console.warn("[JoinPool] Allowance masih 0, tunggu 3 detik lagi...");
+        toast.loading("(2.5/3) Menunggu propagasi blockchain...", { id: "join" });
+        await new Promise(r => setTimeout(r, 3000));
+        currentAllowance = await readContract(wagmiConfig, {
+          address: poolIdrxToken,
+          abi: IDRX_ABI,
+          functionName: "allowance",
+          args: [address as `0x${string}`, ARMINA_POOL_ADDRESS],
+        }) as bigint;
+        console.log("[JoinPool] Allowance setelah retry:", currentAllowance.toString());
+      }
+
+      if (currentAllowance === 0n) {
+        throw new Error("Approve gagal atau belum on-chain. Coba refresh dan join ulang.");
+      }
+
+      // Step 3: Pre-flight simulate untuk deteksi revert sebelum kirim tx
+      // Ini menangkap error seperti PoolNotOpen, AlreadyJoined, atau broken priceFeed/reputationContract
+      toast.loading("(3/3) Memverifikasi pool...", { id: "join" });
+      try {
+        await simulateContract(wagmiConfig, {
+          address: ARMINA_POOL_ADDRESS,
+          abi: ARMINA_POOL_ABI as any,
+          functionName: "joinPool",
+          args: [poolId],
+          account: address as `0x${string}`,
+        });
+      } catch (simErr: any) {
+        const errorName =
+          simErr?.cause?.data?.errorName ||
+          simErr?.data?.errorName ||
+          simErr?.cause?.reason ||
+          simErr?.shortMessage ||
+          simErr?.message ||
+          "";
+        console.error("[JoinPool] Simulate failed:", simErr);
+        if (errorName.includes("AlreadyJoined")) {
+          throw new Error("Kamu sudah bergabung di pool ini. Refresh halaman.");
+        } else if (errorName.includes("PoolNotOpen")) {
+          throw new Error("Pool sudah tidak Open. Refresh halaman dan pilih pool lain.");
+        } else if (errorName.includes("AlreadyClaimed")) {
+          throw new Error("Kamu sudah klaim dari pool ini.");
+        } else if (
+          errorName.includes("InsufficientAllowance") ||
+          simErr?.message?.includes("0xfb8f41b2") ||
+          simErr?.cause?.message?.includes("0xfb8f41b2")
+        ) {
+          throw new Error(
+            "Allowance IDRX tidak cukup di contract pool. " +
+            "Coba refresh halaman dan join ulang — approval akan diulang otomatis."
+          );
+        } else {
+          // Penyebab paling umum: priceFeed atau reputationContract di contract bermasalah.
+          // Jalankan: npx hardhat run scripts/fix-pool-config.ts --network baseSepolia
+          throw new Error(
+            `Join pool akan gagal on-chain. ` +
+            `Kemungkinan konfigurasi kontrak bermasalah (price feed atau reputation contract). ` +
+            `Hubungi admin untuk menjalankan fix script. Detail: ${errorName || "unknown revert"}`
+          );
+        }
+      }
+
+      // Step 3b: Kirim joinPool tx (sudah diverifikasi bisa sukses)
       toast.loading("(3/3) Konfirmasi join pool di wallet kamu...", { id: "join" });
       const joinHash = await joinPool(poolId);
 
       toast.loading("Menunggu transaksi selesai...", { id: "join" });
-      await waitForTransactionReceipt(wagmiConfig, { hash: joinHash as `0x${string}` });
+      await waitForTransactionReceipt(wagmiConfig, {
+        hash: joinHash as `0x${string}`,
+        confirmations: 2,
+      });
 
       toast.success("Berhasil join pool! Kamu sudah terdaftar.", { id: "join", duration: 6000 });
       setShowJoinModal(false);
@@ -81,7 +203,7 @@ export default function PoolPage() {
     } catch (error: any) {
       console.error("Error joining pool:", error);
       const msg = error?.shortMessage || error?.message || "Gagal join pool";
-      toast.error(msg, { id: "join", duration: 6000 });
+      toast.error(msg, { id: "join", duration: 8000 });
     } finally {
       setIsJoiningPool(false);
     }
@@ -110,11 +232,10 @@ export default function PoolPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-              activeTab === tab.id
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
+            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+              }`}
           >
             {tab.label}
           </button>
@@ -182,8 +303,12 @@ export default function PoolPage() {
 
       {/* Join Pool Modal */}
       {showJoinModal && selectedPool && (() => {
-        const collateral = calculateCollateral(selectedPool.contribution, selectedPool.maxParticipants);
-        const totalNeeded = collateral + selectedPool.contribution;
+        // Kalkulasi menggunakan multiplier dari contract (bukan hardcode 125%)
+        const multiplier = BigInt(collateralMultiplier);
+        const collateral =
+          (selectedPool.contribution * BigInt(selectedPool.maxParticipants) * multiplier) / BigInt(100);
+        const collateralWithBuffer = (collateral * BigInt(101)) / BigInt(100);
+        const totalNeeded = collateralWithBuffer + selectedPool.contribution;
         const canAfford = userBalance !== undefined && userBalance >= totalNeeded;
         const shortfall = userBalance !== undefined && userBalance < totalNeeded
           ? totalNeeded - userBalance
@@ -282,6 +407,19 @@ export default function PoolPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Coinbase Wallet warning */}
+                {canAfford && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex gap-2">
+                    <span className="text-amber-500 text-lg flex-shrink-0">⚠️</span>
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      <strong>Perhatian saat konfirmasi di wallet:</strong> Coinbase Wallet mungkin menampilkan
+                      {" "}<em>"Unable to estimate network fee"</em>. Ini{" "}
+                      <strong>BUKAN error</strong> — itu hanya peringatan UI karena contract belum terdaftar
+                      di Coinbase. Klik <strong>"Confirm"</strong>, bukan Cancel.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3">
@@ -333,13 +471,12 @@ function PoolCard({
   const cannotAfford = isConnected && userBalance !== undefined && userBalance < totalNeeded;
 
   return (
-    <div className={`flex flex-col p-4 border rounded-2xl hover:shadow-md transition-all ${
-      cannotAfford
-        ? "border-red-200 bg-red-50/30"
-        : canAfford
+    <div className={`flex flex-col p-4 border rounded-2xl hover:shadow-md transition-all ${cannotAfford
+      ? "border-red-200 bg-red-50/30"
+      : canAfford
         ? "border-green-200 hover:border-green-300"
         : "border-slate-200 hover:border-[#1e2a4a]/40"
-    }`}>
+      }`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <p className="font-semibold text-slate-900 text-sm">{tierConfig.nameId}</p>

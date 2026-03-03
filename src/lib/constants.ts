@@ -4,16 +4,19 @@ import { parseUnits } from "viem";
 // Chain Configuration
 export const BASE_SEPOLIA_CHAIN_ID = 84532;
 
-// IDRX deployed on Base Sepolia uses 18 decimals
-export const IDRX_DECIMALS = 18;
+// IDRX deployed on Base Sepolia uses 2 decimals (1 IDRX = 1 IDR, like real IDR currency)
+// IMPORTANT: This is 2, NOT 18. Using wrong decimals causes joinPool to fail with
+// "unable to estimate network fee" because safeTransferFrom amount becomes astronomical.
+export const IDRX_DECIMALS = 2;
 
 // Pool Tier Configurations
+// Amounts use 2 decimals (IDRX standard): 100 IDRX = 100 * 10^2 = 10_000
 export const POOL_TIERS: Record<PoolTier, PoolTierConfig> = {
   small: {
     name: "Small Pool",
     nameId: "Small Pool",
-    contribution: parseUnits("100000", IDRX_DECIMALS), // 100K IDRX
-    contributionDisplay: "100K IDRX",
+    contribution: parseUnits("100", IDRX_DECIMALS), // 100 IDRX = 10_000 raw
+    contributionDisplay: "100 IDRX",
     minParticipants: 3,
     maxParticipants: 5,
     cycleDays: 30,
@@ -21,8 +24,8 @@ export const POOL_TIERS: Record<PoolTier, PoolTierConfig> = {
   medium: {
     name: "Medium Pool",
     nameId: "Medium Pool",
-    contribution: parseUnits("500000", IDRX_DECIMALS), // 500K IDRX
-    contributionDisplay: "500K IDRX",
+    contribution: parseUnits("500", IDRX_DECIMALS), // 500 IDRX = 50_000 raw
+    contributionDisplay: "500 IDRX",
     minParticipants: 5,
     maxParticipants: 10,
     cycleDays: 30,
@@ -30,8 +33,8 @@ export const POOL_TIERS: Record<PoolTier, PoolTierConfig> = {
   large: {
     name: "Large Pool",
     nameId: "Large Pool",
-    contribution: parseUnits("1000000", IDRX_DECIMALS), // 1M IDRX
-    contributionDisplay: "1M IDRX",
+    contribution: parseUnits("1000", IDRX_DECIMALS), // 1000 IDRX = 100_000 raw
+    contributionDisplay: "1000 IDRX",
     minParticipants: 10,
     maxParticipants: 20,
     cycleDays: 30,
@@ -95,7 +98,7 @@ export function formatIDRX(amount: bigint): string {
   // Format dengan pemisah ribuan menggunakan titik (format Indonesia)
   const formatted = value.toLocaleString("id-ID", {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   });
   return `${formatted} IDRX`;
 }

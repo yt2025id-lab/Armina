@@ -8,7 +8,9 @@ export const config = createConfig({
     coinbaseWallet({
       appName: "Armina - Arisan Mini App",
       appLogoUrl: "https://armina.app/logo.png",
-      preference: "smartWalletOnly", // Use Coinbase Smart Wallet (Base Accounts)
+      // Gunakan EOA (bukan Smart Wallet) agar gas estimation dan allowance bekerja normal.
+      // smartWalletOnly menyebabkan address berbeda sehingga joinPool selalu gagal estimate gas.
+      preference: "eoaOnly",
     }),
   ],
   transports: {

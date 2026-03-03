@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { PrivyProvider } from "./PrivyProvider";
+import { WagmiProvider } from "./WagmiProvider";
 import { OnchainKitProvider } from "./OnchainKitProvider";
 import { MiniKitProvider } from "./MiniKitProvider";
 import { ThemeProvider } from "./ThemeProvider";
@@ -10,7 +10,7 @@ import { LanguageProvider } from "./LanguageProvider";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <PrivyProvider>
+    <WagmiProvider>
       <MiniKitProvider>
         <OnchainKitProvider>
           <ThemeProvider>
@@ -20,7 +20,7 @@ export function Providers({ children }: { children: ReactNode }) {
           </ThemeProvider>
         </OnchainKitProvider>
       </MiniKitProvider>
-    </PrivyProvider>
+    </WagmiProvider>
   );
 }
 

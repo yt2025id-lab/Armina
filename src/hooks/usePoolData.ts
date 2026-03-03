@@ -151,14 +151,16 @@ export function useAllPools() {
       });
     }
 
-    // Filter according to user request:
-    // "active saja dan mengambil 3 data yang sudah tertutup 3 terakhir"
-    // We interpret "active" as Open + Active (running).
-    // completedPools should be limited to 3.
+    // Filter: Sembunyikan "legacy broken pools" yang dibuat ketika IDRX_DECIMALS salah = 18.
+    // Pool lama rusak: contribution = 100 × 10^18 (terlalu besar, tidak bisa di-join siapapun).
+    // Pool baru yang benar: contribution = 100 × 10^2 = 10_000 raw.
+    // Threshold: contribution > 100_000_000 raw (> 1 juta IDRX dalam 2 dec) → pool rusak, skip.
+    const VALID_POOL_MAX_CONTRIBUTION = BigInt(100_000_000); // 1M IDRX × 10^2
+    const validPools = pools.filter((p) => p.contribution <= VALID_POOL_MAX_CONTRIBUTION);
 
-    const openPools = pools.filter((p) => !p.isActive && !p.isCompleted && p.currentParticipants < p.maxParticipants);
-    const activePools = pools.filter((p) => p.isActive && !p.isCompleted);
-    const completedPools = pools.filter((p) => p.isCompleted).slice(0, 3); // Take top 3 (since we fetched validation reverse, these are latest)
+    const openPools = validPools.filter((p) => !p.isActive && !p.isCompleted && p.currentParticipants < p.maxParticipants);
+    const activePools = validPools.filter((p) => p.isActive && !p.isCompleted);
+    const completedPools = validPools.filter((p) => p.isCompleted).slice(0, 3);
 
     return {
       pools, // Note: This now only contains the fetched subset (last 10)
