@@ -65,12 +65,13 @@ export default function ProfilPage() {
     }
   }, [claimSuccess]);
 
+  // fallback error dari wagmi state
   useEffect(() => {
     if (claimError) {
       toast.dismiss("profil-claim");
       const msg = (claimError as any)?.shortMessage || (claimError as any)?.message || "Failed to claim IDRX";
       if (msg.toLowerCase().includes("does not match the target chain") || msg.toLowerCase().includes("chain mismatch")) return;
-      debugError("ProfilPage:claimFaucet", claimError);
+      debugError("ProfilPage:wagmiError", claimError);
       toast.error(msg, { duration: 8000 });
     }
   }, [claimError]);
@@ -78,14 +79,28 @@ export default function ProfilPage() {
   const handleClaimFaucet = async () => {
     if (chainId !== baseSepolia.id) {
       try {
+        toast.loading("Switching ke Base Sepolia...", { id: "profil-claim" });
         await switchChainAsync({ chainId: baseSepolia.id });
-      } catch {
-        toast.error("Switch to Base Sepolia first");
+      } catch (switchErr) {
+        toast.dismiss("profil-claim");
+        debugError("ProfilPage:switchChain", switchErr);
+        toast.error("Gagal switch ke Base Sepolia. Ganti jaringan manual di wallet.");
         return;
       }
     }
-    toast.loading("Claiming IDRX...", { id: "profil-claim" });
-    claimFaucet();
+    try {
+      toast.loading("Claiming IDRX...", { id: "profil-claim" });
+      await claimFaucet();
+    } catch (claimErr: any) {
+      toast.dismiss("profil-claim");
+      debugError("ProfilPage:claimFaucet", claimErr);
+      const msg = claimErr?.shortMessage || claimErr?.message || "Gagal claim IDRX";
+      if (msg.toLowerCase().includes("user rejected") || msg.toLowerCase().includes("user denied")) {
+        toast.error("Transaksi dibatalkan.");
+        return;
+      }
+      toast.error(msg, { duration: 8000 });
+    }
   };
 
   const displayAddress = address || ("0x0000000000000000000000000000000000000000" as `0x${string}`);

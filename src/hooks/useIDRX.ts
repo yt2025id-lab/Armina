@@ -107,16 +107,19 @@ export function useTimeUntilNextClaim(address: `0x${string}` | undefined) {
 }
 
 export function useClaimFaucet() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { writeContractAsync, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const claimFaucet = () => {
-    if (!CONTRACTS.IDRX) return;
-    writeContract({
+  const claimFaucet = async (): Promise<`0x${string}`> => {
+    if (!CONTRACTS.IDRX) {
+      throw new Error(`IDRX contract address tidak dikonfigurasi (NEXT_PUBLIC_IDRX_ADDRESS kosong)`);
+    }
+    console.log("[useClaimFaucet] Sending faucet tx to:", CONTRACTS.IDRX);
+    // Tidak pass chainId di sini — chain sudah diswitch sebelumnya di handleClaim
+    return writeContractAsync({
       address: CONTRACTS.IDRX,
       abi: IDRX_ABI,
       functionName: "faucet",
-      chainId: baseSepolia.id,
     });
   };
 
