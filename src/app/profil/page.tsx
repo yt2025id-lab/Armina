@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useBalance, useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useBalance, useSwitchChain } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 import { useAuth } from "@/hooks/useAuth";
 import { formatUnits } from "viem";
@@ -52,9 +52,10 @@ export default function ProfilPage() {
   const { data: discountRaw } = useCollateralDiscount(address);
   const discount = discountRaw as number | undefined;
 
-  const chainId = useChainId();
-  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
-  const isWrongNetwork = !!address && chainId !== baseSepolia.id;
+  // Gunakan useAccount().chain untuk chain aktual di wallet
+  const { chain: walletChain } = useAccount();
+  const { switchChain, switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
+  const isWrongNetwork = !!address && walletChain?.id !== baseSepolia.id;
 
   const { claimFaucet, isPending: isClaimingFaucet, isSuccess: claimSuccess } = useClaimFaucet();
 
@@ -66,9 +67,19 @@ export default function ProfilPage() {
   }, [claimSuccess]);
 
   const handleClaimFaucet = async () => {
+    if (walletChain?.id !== baseSepolia.id) {
+      try {
+        toast.loading("Menambahkan/switch ke Base Sepolia...", { id: "profil-claim" });
+        await switchChainAsync({ chainId: baseSepolia.id });
+      } catch (switchErr) {
+        toast.dismiss("profil-claim");
+        debugError("ProfilPage:switchChain", switchErr);
+        toast.error("Gagal switch ke Base Sepolia. Coba tambah manual di wallet.");
+        return;
+      }
+    }
     try {
       toast.loading("Claiming IDRX...", { id: "profil-claim" });
-      // claimFaucet() sudah include chainId: baseSepolia.id — wagmi otomatis switch jika perlu
       await claimFaucet();
     } catch (claimErr: any) {
       toast.dismiss("profil-claim");

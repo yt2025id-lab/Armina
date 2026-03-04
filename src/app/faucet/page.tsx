@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
-import { useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 import { formatUnits } from "viem";
 import { useClaimFaucet, useIDRXBalance, useIDRXDecimals } from "@/hooks/useIDRX";
@@ -20,9 +20,10 @@ export default function FaucetPage() {
   const [lastClaimed, setLastClaimed] = useState<Date | null>(null);
   const [claimCount, setClaimCount] = useState(0);
   const { t } = useLanguage();
-  const chainId = useChainId();
+  // Gunakan useAccount().chain untuk chain aktual di wallet (bukan useChainId yang bisa stale)
+  const { chain: walletChain } = useAccount();
   const { switchChain, switchChainAsync, isPending: isSwitching } = useSwitchChain();
-  const isWrongNetwork = isConnected && chainId !== baseSepolia.id;
+  const isWrongNetwork = isConnected && walletChain?.id !== baseSepolia.id;
 
   useEffect(() => {
     if (isSuccess) {
@@ -39,9 +40,24 @@ export default function FaucetPage() {
       toast.error("Please connect your wallet first");
       return;
     }
+
+    // Cek chain aktual dari wallet (bukan useChainId yang bisa stale)
+    if (walletChain?.id !== baseSepolia.id) {
+      try {
+        toast.loading("Menambahkan/switch ke Base Sepolia...", { id: "claim" });
+        // switchChainAsync mengirim wallet_addEthereumChain + wallet_switchEthereumChain
+        // sehingga Base Sepolia otomatis terdaftar di Coinbase Wallet jika belum ada
+        await switchChainAsync({ chainId: baseSepolia.id });
+      } catch (switchErr) {
+        toast.dismiss("claim");
+        debugError("FaucetPage:switchChain", switchErr);
+        toast.error("Gagal switch ke Base Sepolia. Coba tambah manual di wallet.");
+        return;
+      }
+    }
+
     try {
       toast.loading("Claiming 500K IDRX...", { id: "claim" });
-      // claimFaucet() sudah include chainId: baseSepolia.id — wagmi otomatis switch jika perlu
       await claimFaucet();
     } catch (claimErr: any) {
       toast.dismiss("claim");
