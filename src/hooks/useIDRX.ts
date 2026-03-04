@@ -115,11 +115,12 @@ export function useClaimFaucet() {
       throw new Error(`IDRX contract address tidak dikonfigurasi (NEXT_PUBLIC_IDRX_ADDRESS kosong)`);
     }
     console.log("[useClaimFaucet] Sending faucet tx to:", CONTRACTS.IDRX);
-    // Tidak pass chainId di sini — chain sudah diswitch sebelumnya di handleClaim
+    // chainId diteruskan agar wagmi otomatis switch chain jika wallet belum di Base Sepolia
     return writeContractAsync({
       address: CONTRACTS.IDRX,
       abi: IDRX_ABI,
       functionName: "faucet",
+      chainId: baseSepolia.id,
     });
   };
 

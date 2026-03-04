@@ -53,10 +53,10 @@ export default function ProfilPage() {
   const discount = discountRaw as number | undefined;
 
   const chainId = useChainId();
-  const { switchChain, switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const isWrongNetwork = !!address && chainId !== baseSepolia.id;
 
-  const { claimFaucet, isPending: isClaimingFaucet, isSuccess: claimSuccess, error: claimError } = useClaimFaucet();
+  const { claimFaucet, isPending: isClaimingFaucet, isSuccess: claimSuccess } = useClaimFaucet();
 
   useEffect(() => {
     if (claimSuccess) {
@@ -65,38 +65,17 @@ export default function ProfilPage() {
     }
   }, [claimSuccess]);
 
-  // fallback error dari wagmi state
-  useEffect(() => {
-    if (claimError) {
-      toast.dismiss("profil-claim");
-      const msg = (claimError as any)?.shortMessage || (claimError as any)?.message || "Failed to claim IDRX";
-      if (msg.toLowerCase().includes("does not match the target chain") || msg.toLowerCase().includes("chain mismatch")) return;
-      debugError("ProfilPage:wagmiError", claimError);
-      toast.error(msg, { duration: 8000 });
-    }
-  }, [claimError]);
-
   const handleClaimFaucet = async () => {
-    if (chainId !== baseSepolia.id) {
-      try {
-        toast.loading("Switching ke Base Sepolia...", { id: "profil-claim" });
-        await switchChainAsync({ chainId: baseSepolia.id });
-      } catch (switchErr) {
-        toast.dismiss("profil-claim");
-        debugError("ProfilPage:switchChain", switchErr);
-        toast.error("Gagal switch ke Base Sepolia. Ganti jaringan manual di wallet.");
-        return;
-      }
-    }
     try {
       toast.loading("Claiming IDRX...", { id: "profil-claim" });
+      // claimFaucet() sudah include chainId: baseSepolia.id — wagmi otomatis switch jika perlu
       await claimFaucet();
     } catch (claimErr: any) {
       toast.dismiss("profil-claim");
       debugError("ProfilPage:claimFaucet", claimErr);
       const msg = claimErr?.shortMessage || claimErr?.message || "Gagal claim IDRX";
       if (msg.toLowerCase().includes("user rejected") || msg.toLowerCase().includes("user denied")) {
-        toast.error("Transaksi dibatalkan.");
+        toast.error("Dibatalkan di wallet.");
         return;
       }
       toast.error(msg, { duration: 8000 });

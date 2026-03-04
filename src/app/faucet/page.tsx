@@ -34,48 +34,21 @@ export default function FaucetPage() {
     }
   }, [isSuccess, refetch, t.claimSuccess]);
 
-  // error dari wagmi (fallback jika handleClaim tidak catch duluan)
-  useEffect(() => {
-    if (error) {
-      toast.dismiss("claim");
-      const msg = (error as any)?.shortMessage || (error as any)?.message || "Failed to claim IDRX";
-      if (msg.toLowerCase().includes("does not match the target chain") || msg.toLowerCase().includes("chain mismatch")) return;
-      debugError("FaucetPage:wagmiError", error);
-      toast.error(msg, { duration: 8000 });
-    }
-  }, [error]);
-
   const handleClaim = async () => {
     if (!isConnected) {
       toast.error("Please connect your wallet first");
       return;
     }
-
-    // Pastikan chain benar sebelum kirim tx
-    if (chainId !== baseSepolia.id) {
-      try {
-        toast.loading("Switching ke Base Sepolia...", { id: "claim" });
-        await switchChainAsync({ chainId: baseSepolia.id });
-      } catch (switchErr) {
-        toast.dismiss("claim");
-        debugError("FaucetPage:switchChain", switchErr);
-        toast.error("Gagal switch ke Base Sepolia. Ganti jaringan manual di wallet.");
-        return;
-      }
-    }
-
     try {
       toast.loading("Claiming 500K IDRX...", { id: "claim" });
-      console.log("[FaucetPage] handleClaim — chainId:", chainId, "address:", address);
+      // claimFaucet() sudah include chainId: baseSepolia.id — wagmi otomatis switch jika perlu
       await claimFaucet();
-      // isSuccess effect yang handle toast success + refetch
     } catch (claimErr: any) {
       toast.dismiss("claim");
       debugError("FaucetPage:claimFaucet", claimErr);
       const msg = claimErr?.shortMessage || claimErr?.message || "Gagal claim IDRX";
-      // Jangan tampilkan error jika user sendiri yang reject di wallet
       if (msg.toLowerCase().includes("user rejected") || msg.toLowerCase().includes("user denied")) {
-        toast.error("Transaksi dibatalkan.");
+        toast.error("Dibatalkan di wallet.");
         return;
       }
       toast.error(msg, { duration: 8000 });
