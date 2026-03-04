@@ -52,7 +52,7 @@ export default function ProfilPage() {
   const discount = discountRaw as number | undefined;
 
   const chainId = useChainId();
-  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
+  const { switchChain, switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
   const isWrongNetwork = !!address && chainId !== baseSepolia.id;
 
   const { claimFaucet, isPending: isClaimingFaucet, isSuccess: claimSuccess, error: claimError } = useClaimFaucet();
@@ -68,11 +68,20 @@ export default function ProfilPage() {
     if (claimError) {
       toast.dismiss("profil-claim");
       const msg = (claimError as any)?.shortMessage || (claimError as any)?.message || "Failed to claim IDRX";
+      if (msg.toLowerCase().includes("chain") || msg.toLowerCase().includes("network")) return;
       toast.error(msg);
     }
   }, [claimError]);
 
-  const handleClaimFaucet = () => {
+  const handleClaimFaucet = async () => {
+    if (chainId !== baseSepolia.id) {
+      try {
+        await switchChainAsync({ chainId: baseSepolia.id });
+      } catch {
+        toast.error("Switch to Base Sepolia first");
+        return;
+      }
+    }
     toast.loading("Claiming IDRX...", { id: "profil-claim" });
     claimFaucet();
   };
