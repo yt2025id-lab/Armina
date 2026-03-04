@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
+  devIndicators: false,
+  logging: {
+    fetches: {
+      fullUrl: true,
+      hmrRefreshes: false,
+    },
+  },
   images: {
     remotePatterns: [
       {

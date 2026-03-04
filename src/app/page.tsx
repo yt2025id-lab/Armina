@@ -103,14 +103,14 @@ export default function HomePage() {
             </div>
 
             {/* Stats Bar */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-6xl mt-12 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-6xl mt-12 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
               <div className="p-5 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 text-center">
                 <p className="text-blue-200 text-sm uppercase tracking-wider font-semibold">{t.totalPrizesAwarded}</p>
-                <p className="text-3xl md:text-4xl font-bold text-white mt-1">$1,240</p>
+                <p className="text-3xl md:text-4xl font-bold text-white mt-1">Rp. 1240T</p>
               </div>
               <div className="p-5 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 text-center">
                 <p className="text-blue-200 text-sm uppercase tracking-wider font-semibold">{t.currentTvl}</p>
-                <p className="text-3xl md:text-4xl font-bold text-white mt-1">$45K+</p>
+                <p className="text-3xl md:text-4xl font-bold text-white mt-1">Rp. 45T</p>
               </div>
               <div className="p-5 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 text-center">
                 <p className="text-blue-200 text-sm uppercase tracking-wider font-semibold">{t.activePools}</p>
