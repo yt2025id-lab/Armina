@@ -47,8 +47,8 @@ export default function ContactPage() {
                                 {t.emailUs}
                             </h3>
                             <p className="text-blue-100/70 mb-2">{t.forGeneralInquiries}</p>
-                            <a href="mailto:hello@armina.finance" className="text-xl font-semibold text-white hover:text-blue-300 transition-colors">
-                                hello@armina.finance
+                            <a href="mailto:nicholasdwinatakhouw@gmail.com" className="text-xl font-semibold text-white hover:text-blue-300 transition-colors">
+                                nicholasdwinatakhouw@gmail.com
                             </a>
                         </div>
 
@@ -61,8 +61,7 @@ export default function ContactPage() {
                             </h3>
                             <p className="text-blue-100/70 mb-2">{t.dummyAddressNote}</p>
                             <p className="text-lg font-medium text-white">
-                                123 Blockchain Boulevard,<br />
-                                Crypto Valley, CV 42069
+                                Yogyakarta Prime
                             </p>
                         </div>
 
@@ -92,7 +91,7 @@ export default function ContactPage() {
                                         type="text"
                                         id="name"
                                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-                                        placeholder="John Doe"
+                                        placeholder="Your Name"
                                         required
                                     />
                                 </div>
@@ -102,7 +101,7 @@ export default function ContactPage() {
                                         type="email"
                                         id="email"
                                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-                                        placeholder="john@example.com"
+                                        placeholder="Your Email"
                                         required
                                     />
                                 </div>

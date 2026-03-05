@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useBalance, useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useBalance, useSwitchChain } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 import { useAuth } from "@/hooks/useAuth";
 import { formatUnits } from "viem";
@@ -15,6 +15,7 @@ import { useReputationData, useHasReputation, useCollateralDiscount } from "@/ho
 import { useParticipantInfo, useAllPools } from "@/hooks/usePoolData";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import { debugError } from "@/lib/debug";
 
 const LEVEL_COLORS: Record<ReputationLevel, { border: string; text: string; bg: string; dot: string }> = {
   bronze:  { border: "border-amber-300",  text: "text-amber-700",  bg: "bg-amber-50",  dot: "bg-amber-500" },
@@ -51,11 +52,12 @@ export default function ProfilPage() {
   const { data: discountRaw } = useCollateralDiscount(address);
   const discount = discountRaw as number | undefined;
 
-  const chainId = useChainId();
+  // Gunakan useAccount().chain untuk chain aktual di wallet
+  const { chain: walletChain } = useAccount();
   const { switchChain, switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
-  const isWrongNetwork = !!address && chainId !== baseSepolia.id;
+  const isWrongNetwork = !!address && walletChain?.id !== baseSepolia.id;
 
-  const { claimFaucet, isPending: isClaimingFaucet, isSuccess: claimSuccess, error: claimError } = useClaimFaucet();
+  const { claimFaucet, isPending: isClaimingFaucet, isSuccess: claimSuccess } = useClaimFaucet();
 
   useEffect(() => {
     if (claimSuccess) {
@@ -64,26 +66,31 @@ export default function ProfilPage() {
     }
   }, [claimSuccess]);
 
-  useEffect(() => {
-    if (claimError) {
-      toast.dismiss("profil-claim");
-      const msg = (claimError as any)?.shortMessage || (claimError as any)?.message || "Failed to claim IDRX";
-      if (msg.toLowerCase().includes("chain") || msg.toLowerCase().includes("network")) return;
-      toast.error(msg);
-    }
-  }, [claimError]);
-
   const handleClaimFaucet = async () => {
-    if (chainId !== baseSepolia.id) {
+    if (walletChain?.id !== baseSepolia.id) {
       try {
+        toast.loading("Menambahkan/switch ke Base Sepolia...", { id: "profil-claim" });
         await switchChainAsync({ chainId: baseSepolia.id });
-      } catch {
-        toast.error("Switch to Base Sepolia first");
+      } catch (switchErr) {
+        toast.dismiss("profil-claim");
+        debugError("ProfilPage:switchChain", switchErr);
+        toast.error("Gagal switch ke Base Sepolia. Coba tambah manual di wallet.");
         return;
       }
     }
-    toast.loading("Claiming IDRX...", { id: "profil-claim" });
-    claimFaucet();
+    try {
+      toast.loading("Claiming IDRX...", { id: "profil-claim" });
+      await claimFaucet();
+    } catch (claimErr: any) {
+      toast.dismiss("profil-claim");
+      debugError("ProfilPage:claimFaucet", claimErr);
+      const msg = claimErr?.shortMessage || claimErr?.message || "Gagal claim IDRX";
+      if (msg.toLowerCase().includes("user rejected") || msg.toLowerCase().includes("user denied")) {
+        toast.error("Dibatalkan di wallet.");
+        return;
+      }
+      toast.error(msg, { duration: 8000 });
+    }
   };
 
   const displayAddress = address || ("0x0000000000000000000000000000000000000000" as `0x${string}`);

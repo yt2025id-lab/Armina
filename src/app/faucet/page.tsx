@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
-import { useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 import { formatUnits } from "viem";
 import { useClaimFaucet, useIDRXBalance, useIDRXDecimals } from "@/hooks/useIDRX";
 import { useLanguage } from "@/components/providers";
+import { debugError } from "@/lib/debug";
 
 export default function FaucetPage() {
   const router = useRouter();
@@ -19,9 +20,10 @@ export default function FaucetPage() {
   const [lastClaimed, setLastClaimed] = useState<Date | null>(null);
   const [claimCount, setClaimCount] = useState(0);
   const { t } = useLanguage();
-  const chainId = useChainId();
+  // Gunakan useAccount().chain untuk chain aktual di wallet (bukan useChainId yang bisa stale)
+  const { chain: walletChain } = useAccount();
   const { switchChain, switchChainAsync, isPending: isSwitching } = useSwitchChain();
-  const isWrongNetwork = isConnected && chainId !== baseSepolia.id;
+  const isWrongNetwork = isConnected && walletChain?.id !== baseSepolia.id;
 
   useEffect(() => {
     if (isSuccess) {
@@ -33,31 +35,40 @@ export default function FaucetPage() {
     }
   }, [isSuccess, refetch, t.claimSuccess]);
 
-  useEffect(() => {
-    if (error) {
-      toast.dismiss("claim");
-      const msg = (error as any)?.shortMessage || (error as any)?.message || "Failed to claim IDRX";
-      // Skip chain mismatch errors — UI already shows the Switch Network banner
-      if (msg.toLowerCase().includes("chain") || msg.toLowerCase().includes("network")) return;
-      toast.error(msg);
-    }
-  }, [error]);
-
   const handleClaim = async () => {
     if (!isConnected) {
       toast.error("Please connect your wallet first");
       return;
     }
-    if (chainId !== baseSepolia.id) {
+
+    // Cek chain aktual dari wallet (bukan useChainId yang bisa stale)
+    if (walletChain?.id !== baseSepolia.id) {
       try {
+        toast.loading("Menambahkan/switch ke Base Sepolia...", { id: "claim" });
+        // switchChainAsync mengirim wallet_addEthereumChain + wallet_switchEthereumChain
+        // sehingga Base Sepolia otomatis terdaftar di Coinbase Wallet jika belum ada
         await switchChainAsync({ chainId: baseSepolia.id });
-      } catch {
-        toast.error("Switch to Base Sepolia first");
+      } catch (switchErr) {
+        toast.dismiss("claim");
+        debugError("FaucetPage:switchChain", switchErr);
+        toast.error("Gagal switch ke Base Sepolia. Coba tambah manual di wallet.");
         return;
       }
     }
-    toast.loading("Claiming 500K IDRX...", { id: "claim" });
-    claimFaucet();
+
+    try {
+      toast.loading("Claiming 500K IDRX...", { id: "claim" });
+      await claimFaucet();
+    } catch (claimErr: any) {
+      toast.dismiss("claim");
+      debugError("FaucetPage:claimFaucet", claimErr);
+      const msg = claimErr?.shortMessage || claimErr?.message || "Gagal claim IDRX";
+      if (msg.toLowerCase().includes("user rejected") || msg.toLowerCase().includes("user denied")) {
+        toast.error("Dibatalkan di wallet.");
+        return;
+      }
+      toast.error(msg, { duration: 8000 });
+    }
   };
 
   const formatBalance = (bal: bigint | undefined) => {

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/components/providers";
 
@@ -31,7 +32,7 @@ export default function AboutPage() {
             <div className="bg-white/5 border-y border-white/10 backdrop-blur-sm py-12 px-6">
                 <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                     <div className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-                        <p className="text-4xl md:text-5xl font-bold text-white mb-2">$45K+</p>
+                        <p className="text-4xl md:text-5xl font-bold text-white mb-2">Rp. 45T+</p>
                         <p className="text-blue-200 font-medium">{t.totalValueLocked}</p>
                     </div>
                     <div className="animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
@@ -39,7 +40,7 @@ export default function AboutPage() {
                         <p className="text-blue-200 font-medium">{t.happySavers}</p>
                     </div>
                     <div className="animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-                        <p className="text-4xl md:text-5xl font-bold text-white mb-2">$1,240</p>
+                        <p className="text-4xl md:text-5xl font-bold text-white mb-2">Rp. 1240T</p>
                         <p className="text-blue-200 font-medium">{t.prizesAwarded}</p>
                     </div>
                     <div className="animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
@@ -54,8 +55,13 @@ export default function AboutPage() {
                 <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
                     <div className="order-2 md:order-1 relative">
                         <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 rounded-3xl transform rotate-3 scale-105 opacity-20"></div>
-                        <div className="relative bg-slate-100 rounded-3xl p-8 h-[400px] flex items-center justify-center border border-slate-200 overflow-hidden">
-                            <div className="text-slate-300 text-9xl">🎯</div>
+                        <div className="relative bg-slate-100 rounded-3xl h-[400px] border border-slate-200 overflow-hidden">
+                            <Image
+                                src="/financial-peace.jpg"
+                                alt="Financial Peace"
+                                fill
+                                className="object-cover"
+                            />
                         </div>
                     </div>
 
@@ -99,16 +105,22 @@ export default function AboutPage() {
                         <p className="text-blue-200 text-lg">{t.teamBuilders}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center hover:-translate-y-2 transition-transform duration-300">
-                                <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-400 to-purple-500 rounded-full mb-6 border-4 border-white/10 overflow-hidden relative">
-                                    <div className="absolute inset-0 flex items-center justify-center text-4xl text-white/50 font-bold">
-                                        #{i}
-                                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+                        {[
+                            { name: "Ozan", role: "Smart Contract Developer", photo: "/ozan.png" },
+                            { name: "Niko", role: "Full Stack Developer", photo: "/niko.png" },
+                        ].map((member) => (
+                            <div key={member.name} className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center hover:-translate-y-2 transition-transform duration-300">
+                                <div className="w-32 h-32 mx-auto rounded-full mb-6 border-4 border-white/10 overflow-hidden relative">
+                                    <Image
+                                        src={member.photo}
+                                        alt={member.name}
+                                        fill
+                                        className="object-cover"
+                                    />
                                 </div>
-                                <h3 className="text-xl font-bold mb-1">{t.teamMember} {i}</h3>
-                                <p className="text-blue-300 mb-4">{t.coFounderDev}</p>
+                                <h3 className="text-xl font-bold mb-1">{member.name}</h3>
+                                <p className="text-blue-300 mb-4">{member.role}</p>
                                 <div className="flex justify-center gap-4">
                                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 cursor-pointer transition-colors">
                                         <span className="text-xs">𝕏</span>
