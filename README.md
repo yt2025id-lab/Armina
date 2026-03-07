@@ -10,7 +10,7 @@
 
 **Indonesia's $25B rotating savings tradition — trustlessly enforced on-chain.**
 
-[Try Live App](https://armina-theta.vercel.app) · [Watch Demo](https://drive.google.com/file/d/1P0V0APVd-yRne7h8MVXJ0FcwWXefpM2H/view?usp=drive_link) · [Watch Intro](https://drive.google.com/file/d/1G4OeHmQV_tOIryMhKjbhYkJ-qIhUiqut/view?usp=drive_link) · [View Contracts](#smart-contracts) · [Architecture](#architecture)
+[Try Live App](https://armina-theta.vercel.app) · [Watch Demo](https://drive.google.com/file/d/1P0V0APVd-yRne7h8MVXJ0FcwWXefpM2H/view?usp=drive_link) · [Watch Intro](https://drive.google.com/file/d/1G4OeHmQV_tOIryMhKjbhYkJ-qIhUiqut/view?usp=drive_link) · [Pitch Deck & Videos](https://drive.google.com/drive/folders/131CwIqH94TDmkFcJ_eIiUGrWHekmcajY) · [View Contracts](#smart-contracts) · [Architecture](#architecture)
 
 </div>
 
